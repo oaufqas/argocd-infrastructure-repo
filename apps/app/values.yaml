@@ -1,0 +1,27 @@
+server:
+  name: server
+  replicas: 2
+  container:
+    name: rent
+    port: 5000
+    image: rvlxx/rent
+    tag: "local"
+  serviceName: server-svc
+  imagesecret: registry-secret
+  scname: nfs
+  pvcname: server-shared-storage
+  storage: 3Gi
+  appsecret: server-values 
+  # saname: server-sa
+
+db:
+  name: mysql
+  image: mysql:8.0
+  dbsecret: secret-variables
+  cfgmysqlconf: config-mysql
+  cfgmysqlinit: initssql
+  storage: 1Gi
+  saname: db-sa
+
+ssl:
+  enabled: false
