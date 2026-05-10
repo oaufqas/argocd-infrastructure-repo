@@ -5,8 +5,8 @@ metadata:
 spec:
   project: development
   source:
-    repoURL: https://github.com/oaufqas/rent.git
-    path: kubernetes/k8s-app
+    repoURL: https://github.com/oaufqas/argocd-infrastructure-repo.git
+    path: apps/app
     targetRevision: HEAD
     helm:
       valueFiles:

@@ -1,0 +1,55 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: vault
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  project: default
+  source:
+    repoURL: cr.yandex/yc-marketplace/yandex-cloud/vault/chart
+    targetRevision: main
+    chart: vault
+    helm:
+      values: |
+        server:
+          dev:
+            enabled: false
+          ha:
+            enabled: true
+            replicas: 1
+            raft:
+              enabled: true
+              setNodeId: true
+              config: |
+                ui = true
+                listener "tcp" {
+                  tls_disable = 1
+                  address = "[::]:8200"
+                  cluster_address = "[::]:8201"
+                }
+                storage "raft" {
+                  path = "/vault/data"
+                }
+          image:
+            repository: mirror.gcr.io/hashicorp/vault
+            tag: 1.15.0
+          dataStorage:
+            enabled: true
+            size: 5Gi
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: vault
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+  ignoreDifferences:
+    - group: apps
+      kind: StatefulSet
+      name: vault
+      jsonPointers:
+        - /status
