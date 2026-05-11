@@ -1,19 +1,19 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: infra-base
+  name: nginx-ingress
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "-1"
 spec:
   project: default
   source:
-    repoURL: <ваш-репо>
-    path: charts/infra # чарты с nginx/nfs, либо plain манифесты
-    targetRevision: main
+    repoURL: https://github.com/oaufqas/argocd-infrastructure-repo
+    path: charts/ingress-nginx/
+    targetRevision: master
   destination:
     server: https://kubernetes.default.svc
-    namespace: nginx-nfs
+    namespace: ingress-nginx
   syncPolicy:
     automated:
       prune: true       # удалять ресурсы, если их нет в Git

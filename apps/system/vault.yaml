@@ -8,9 +8,9 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: cr.yandex/yc-marketplace/yandex-cloud/vault/chart
-    targetRevision: main
-    chart: vault
+    repoURL: https://github.com/oaufqas/argocd-infrastructure-repo
+    targetRevision: master
+    path: charts/vault
     helm:
       values: |
         server:

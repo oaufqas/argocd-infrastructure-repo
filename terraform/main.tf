@@ -117,129 +117,129 @@ resource "yandex_kubernetes_node_group" "nodes" {
   }
 }
 
-resource "helm_release" "ingress-nginx" {
-  name             = "ingress-nginx"
-  repository       = "https://kubernetes.github.io/ingress-nginx"
-  chart            = "ingress-nginx"
-  namespace        = "ingress-nginx"
-  create_namespace = true
+# resource "helm_release" "ingress-nginx" {
+#   name             = "ingress-nginx"
+#   repository       = "https://kubernetes.github.io/ingress-nginx"
+#   chart            = "ingress-nginx"
+#   namespace        = "ingress-nginx"
+#   create_namespace = true
 
-  set = [
-    {
-      name  = "controller.service.loadBalancerIP"
-      value = yandex_vpc_address.ingress-static-ip.external_ipv4_address[0].address
-    }
-  ]
-  depends_on = [
-    helm_release.cert_manager
-  ]
-}
+#   set = [
+#     {
+#       name  = "controller.service.loadBalancerIP"
+#       value = yandex_vpc_address.ingress-static-ip.external_ipv4_address[0].address
+#     }
+#   ]
+#   depends_on = [
+#     helm_release.cert_manager
+#   ]
+# }
 
-resource "helm_release" "cert_manager" {
-  name             = "cert-manager"
-  repository       = "oci://quay.io/jetstack/charts"
-  chart            = "cert-manager"
-  namespace        = "cert-manager"
-  create_namespace = true
-  version          = "v1.16.1"
+# resource "helm_release" "cert_manager" {
+#   name             = "cert-manager"
+#   repository       = "oci://quay.io/jetstack/charts"
+#   chart            = "cert-manager"
+#   namespace        = "cert-manager"
+#   create_namespace = true
+#   version          = "v1.16.1"
 
-  set = [
-    {
-      name  = "installCRDs"
-      value = "true"
-    }
-  ]
-  depends_on = [
-    yandex_kubernetes_cluster.k8s-cluster
-  ]
-}
+#   set = [
+#     {
+#       name  = "installCRDs"
+#       value = "true"
+#     }
+#   ]
+#   depends_on = [
+#     yandex_kubernetes_cluster.k8s-cluster
+#   ]
+# }
 
-resource "helm_release" "nfs_server" {
-  name             = "nfs-server-provisioner"
-  repository       = "https://kubernetes-sigs.github.io/nfs-ganesha-server-and-external-provisioner"
-  chart            = "nfs-server-provisioner"
-  namespace        = "nfs-system"
-  create_namespace = true
+# resource "helm_release" "nfs_server" {
+#   name             = "nfs-server-provisioner"
+#   repository       = "https://kubernetes-sigs.github.io/nfs-ganesha-server-and-external-provisioner"
+#   chart            = "nfs-server-provisioner"
+#   namespace        = "nfs-system"
+#   create_namespace = true
 
-  set = [{
-    name  = "persistence.enabled"
-    value = "true"
-    },
-    {
-      name  = "persistence.size"
-      value = "4Gi"
-    },
-    {
-      name  = "persistence.storageClass"
-      value = "yc-network-hdd"
-    },
-    {
-      name  = "storageClass.name"
-      value = "nfs"
-  }]
-}
+#   set = [{
+#     name  = "persistence.enabled"
+#     value = "true"
+#     },
+#     {
+#       name  = "persistence.size"
+#       value = "4Gi"
+#     },
+#     {
+#       name  = "persistence.storageClass"
+#       value = "yc-network-hdd"
+#     },
+#     {
+#       name  = "storageClass.name"
+#       value = "nfs"
+#   }]
+# }
 
-resource "helm_release" "vault" {
-  name             = "vault"
-  repository       = "oci://cr.yandex/yc-marketplace/yandex-cloud/vault/chart"
-  chart            = "vault"
-  version          = "0.28.1+yckms"
-  namespace        = "vault"
-  create_namespace = true
+# resource "helm_release" "vault" {
+#   name             = "vault"
+#   repository       = "oci://cr.yandex/yc-marketplace/yandex-cloud/vault/chart"
+#   chart            = "vault"
+#   version          = "0.28.1+yckms"
+#   namespace        = "vault"
+#   create_namespace = true
 
-  values = [
-    yamlencode({
-      server = {
-        dev = { enabled = false }
+#   values = [
+#     yamlencode({
+#       server = {
+#         dev = { enabled = false }
 
-        ha = {
-          enabled  = true
-          replicas = 1
-          raft = {
-            enabled   = true
-            setNodeId = true
-            config    = <<EOT
-              ui = true
-              listener "tcp" {
-                tls_disable = 1
-                address = "[::]:8200"
-                cluster_address = "[::]:8201"
-              }
-              storage "raft" {
-                path = "/vault/data"
-              }
-            EOT
-          }
-        }
+#         ha = {
+#           enabled  = true
+#           replicas = 1
+#           raft = {
+#             enabled   = true
+#             setNodeId = true
+#             config    = <<EOT
+#               ui = true
+#               listener "tcp" {
+#                 tls_disable = 1
+#                 address = "[::]:8200"
+#                 cluster_address = "[::]:8201"
+#               }
+#               storage "raft" {
+#                 path = "/vault/data"
+#               }
+#             EOT
+#           }
+#         }
 
-        image = {
-          repository = "mirror.gcr.io/hashicorp/vault"
-          tag        = "1.15.0"
-        }
+#         image = {
+#           repository = "mirror.gcr.io/hashicorp/vault"
+#           tag        = "1.15.0"
+#         }
 
-        dataStorage = {
-          enabled = true
-          size    = "5Gi"
-        }
-      }
-    })
-  ]
-}
+#         dataStorage = {
+#           enabled = true
+#           size    = "5Gi"
+#         }
+#       }
+#     })
+#   ]
+# }
 
-resource "helm_release" "external_secrets" {
-  name             = "external-secrets"
-  repository       = "https://external-secrets.io"
-  chart            = "external-secrets"
-  namespace        = "external-secrets"
-  create_namespace = true
+# resource "helm_release" "external_secrets" {
+#   name             = "external-secrets"
+#   repository       = "https://external-secrets.io"
+#   chart            = "external-secrets"
+#   namespace        = "external-secrets"
+#   create_namespace = true
 
-  set = [{
-    name  = "installCRDs"
-    value = "true"
-  }]
+#   set = [{
+#     name  = "installCRDs"
+#     value = "true"
+#   }]
 
-  depends_on = [helm_release.vault]
-}
+#   depends_on = [helm_release.vault]
+# }
 
 output "ingress_external_ip" {
   value = yandex_vpc_address.ingress-static-ip.external_ipv4_address[0].address
