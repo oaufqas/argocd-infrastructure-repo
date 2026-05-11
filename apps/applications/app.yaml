@@ -1,22 +1,25 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: nginx-ingress
+  name: app
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "-1"
+    argocd.argoproj.io/sync-wave: "3"
 spec:
   project: default
   source:
     repoURL: https://github.com/oaufqas/argocd-infrastructure-repo
-    path: charts/ingress-nginx/
     targetRevision: master
+    path: charts/app-chart
+    helm:
+      valueFiles:
+        - values.yaml
   destination:
     server: https://kubernetes.default.svc
-    namespace: ingress-nginx
+    namespace: default
   syncPolicy:
     automated:
-      prune: true       # удалять ресурсы, если их нет в Git
-      selfHeal: true    # исправлять ручные правки
+      prune: true
+      selfHeal: true
     syncOptions:
       - CreateNamespace=true

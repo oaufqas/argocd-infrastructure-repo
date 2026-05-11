@@ -1,23 +1,30 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: cert-manager
+  name: nfs-server
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
 spec:
   project: default
   source:
     repoURL: https://github.com/oaufqas/argocd-infrastructure-repo
     targetRevision: master
-    path: charts/cert-manager/
-    helm:
+    path: charts/nfs-server-provisioner/
+    helm: 
       values: |
-        installCRDs: true
+        persistence: 
+          enabled: true
+          size: 4Gi
+          storageClass: "yc-network-hdd"
+        storageClass:
+          name: nfs
   destination:
     server: https://kubernetes.default.svc
-    namespace: cert-manager
+    namespace: nfs-system
   syncPolicy:
     automated:
-      prune: true       # удалять ресурсы, если их нет в Git
-      selfHeal: true    # исправлять ручные правки
+      prune: true
+      selfHeal: true
     syncOptions:
       - CreateNamespace=true

@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: https://github.com/oaufqas/argocd-infrastructure-repo
     targetRevision: master
-    path: charts/vault
+    path: charts/vault/
     helm:
       values: |
         server:
@@ -42,11 +42,10 @@ spec:
     server: https://kubernetes.default.svc
     namespace: vault
   syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
+    automated: null
     syncOptions:
       - CreateNamespace=true
+      - PruneLast=true
   ignoreDifferences:
     - group: apps
       kind: StatefulSet
