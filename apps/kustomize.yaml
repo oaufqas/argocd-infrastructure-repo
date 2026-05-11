@@ -1,9 +1,9 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - applications/cert-manager.yaml
-  - applications/external-secrets.yaml
-  - applications/ingress-nginx.yaml
-  - applications/nfs-server.yaml
-  - applications/vault.yaml
-  - applications/app.yaml
+  - apps/applications/cert-manager.yaml
+  - apps/applications/external-secrets.yaml
+  - apps/applications/ingress-nginx.yaml
+  - apps/applications/nfs-server.yaml
+  - apps/applications/vault.yaml
+  - appsapplications/app.yaml
