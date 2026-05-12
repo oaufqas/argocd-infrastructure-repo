@@ -31,12 +31,21 @@ resource "yandex_vpc_network" "k8s-network" {
   name = "k8s-network"
 }
 
+<<<<<<< HEAD
 # resource "yandex_vpc_address" "ingress-static-ip" {
 #   name = "ingress-ip"
 #   external_ipv4_address {
 #     zone_id = var.zone
 #   }
 # }
+=======
+resource "yandex_vpc_address" "ingress-static-ip" {
+  name = "ingress-ip"
+  external_ipv4_address {
+    zone_id = var.zone
+  }
+}
+>>>>>>> f8c604ffc68b429dbe1924ffbaeaf778ed8729fe
 
 resource "yandex_vpc_subnet" "k8s-subnet" {
   name           = "k8s-subnet"
@@ -241,6 +250,12 @@ resource "yandex_kubernetes_node_group" "nodes" {
 #   depends_on = [helm_release.vault]
 # }
 
+<<<<<<< HEAD
 # output "ingress_external_ip" {
 #   value = yandex_vpc_address.ingress-static-ip.external_ipv4_address[0].address
 # }
+=======
+output "ingress_external_ip" {
+  value = yandex_vpc_address.ingress-static-ip.external_ipv4_address[0].address
+}
+>>>>>>> f8c604ffc68b429dbe1924ffbaeaf778ed8729fe
