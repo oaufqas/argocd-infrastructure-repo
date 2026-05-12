@@ -57,9 +57,8 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - PruneLast=true
+      - PrunePropagationPolicy=foreground
   ignoreDifferences:
-    - group: apps
-      kind: StatefulSet
-      name: vault
+    - kind: Secret
       jsonPointers:
         - /status
