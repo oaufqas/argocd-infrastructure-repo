@@ -13,6 +13,9 @@ spec:
     path: charts/vault/
     helm:
       values: |
+        injector:
+          enabled: false
+
         server:
           dev:
             enabled: false
