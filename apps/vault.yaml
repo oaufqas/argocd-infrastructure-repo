@@ -61,4 +61,18 @@ spec:
   ignoreDifferences:
     - kind: Secret
       jsonPointers:
+        - /data
+        - /stringData
+    - kind: Secret
+      jsonPointers:
+        - /metadata/annotations
+        - /metadata/labels
+    - kind: Secret
+      jsonPointers:
+        - /metadata/resourceVersion
+        - /metadata/uid
+        - /metadata/creationTimestamp
+    - group: external-secrets.io
+      kind: ExternalSecret
+      jsonPointers:
         - /status
