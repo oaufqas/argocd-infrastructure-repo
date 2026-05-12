@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.server.pvcname }}
+spec:
+  accessModes:
+    - ReadWriteMany        
+  storageClassName: {{ .Values.server.scname }}
+  resources:
+    requests:
+      storage: {{ .Values.server.storage }}
+
+
+# apiVersion: v1
+# kind: PersistentVolume
+# metadata:
+#   name: db
+# spec:
+#   capacity:
+#     storage: {{ .Values.db.storage }}
+#   accessModes:
+#     - ReadWriteOnce
+#   persistentVolumeReclaimPolicy: Retain
+#   csi:
+#     driver: disk-csi-driver.mks.ycloud.cloud
+#     volumeHandle: {{ .Values.db.dbDiskId }}  
+#     fsType: ext4
+
+# ---
+
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: {{ .Values.db.pvcname }} 
+# spec:
+#   accessModes:
+#     - ReadWriteOnce
+#   resources:
+#     requests:
+#       storage: {{ .Values.db.storage }}
+#   storageClassName: ""  
+#   volumeName: db
+
+# ---
+
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: nfs-server-main-pvc
+#   namespace: nfs-system 
+# spec:
+#   accessModes:
+#     - ReadWriteOnce
+#   resources:
+#     requests:
+#       storage: 3Gi

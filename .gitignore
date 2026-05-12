@@ -1,0 +1,3 @@
+values-prod.yaml
+terraform.*
+.terraform*

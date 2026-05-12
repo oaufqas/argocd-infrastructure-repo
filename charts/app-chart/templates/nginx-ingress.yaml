@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nginx-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "200m"
+spec:
+  ingressClassName: nginx
+  {{- if .Values.ssl.enabled }}
+  tls:
+    - hosts:
+      - {{ .Values.ssl.domain }}
+      secretName: {{ .Values.ssl.secretname }}
+  {{- end}}
+  rules:
+    - {{- if .Values.ssl.enabled }}
+      host: {{ .Values.ssl.domain}}
+      {{- end}}  
+      http:
+        paths:
+        - path: "/"
+          pathType: Prefix
+          backend:
+            service:
+              name: {{ .Values.server.serviceName }}
+              port:
+                number: {{ .Values.server.container.port }}

@@ -1,0 +1,131 @@
+apiVersion: v1
+kind: Service
+metadata:  
+  name: {{ .Values.db.name }}
+  labels:
+    app: mysql
+spec:
+  ports:
+  - port: 3306
+  clusterIP: None 
+  selector:
+    app: mysql
+
+---
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.db.name }}
+spec:
+  selector:
+    matchLabels:
+      app: mysql
+  serviceName: {{ .Values.db.name }}
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: mysql
+
+    spec:
+      containers:
+      - name: {{ .Values.db.name }}
+        image: {{ .Values.db.image }}
+
+        envFrom:
+        - secretRef:
+            name: {{ .Values.db.dbsecret }}
+
+        ports:
+        - containerPort: 3306
+          name: mysql
+
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/mysql 
+
+        - name: init-scripts
+          mountPath: /docker-entrypoint-initdb.d/
+
+        - name: config-mysql
+          mountPath: /etc/mysql/conf.d/
+
+      volumes:
+        - name: init-scripts
+          configMap:
+            name: {{ .Values.db.cfgmysqlinit }}
+        - name: config-mysql
+          configMap:
+            name: {{ .Values.db.cfgmysqlconf }}
+        # - name: data 
+        #   persistentVolumeClaim:
+        #     claimName: {{ .Values.db.pvcname }}
+
+
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: {{ .Values.db.storage }}
+
+
+
+# apiVersion: v1
+# kind: ServiceAccount
+# metadata:
+#   name: {{ .Values.db.saname }}
+#   labels:
+#     app: {{ .Values.db.name }}
+
+# ---
+
+      # annotations:
+      #   vault.hashicorp.com/agent-inject: "true"
+      #   vault.hashicorp.com/role: "db-role"
+      #   vault.hashicorp.com/agent-inject-secret-dbvalues: "secret/db/db-values"
+      #   vault.hashicorp.com/agent-inject-template-dbvalues: |
+      #     {{ `{{- with secret "secret/data/db/db-values" -}}` }}
+      #     {{ `{{- range $key, $value := .Data.data }}` }}
+      #     export {{`{{$key}}`}}="{{`{{$value}}`}}"
+      #     {{ `{{- end }}` }}
+      #     {{ `{{- end -}}` }}
+
+            # serviceAccountName: {{ .Values.db.saname }}
+
+        # command: ["/bin/bash"]
+        # args:
+        #   - -c
+        #   - |
+        #     set -e
+        #     source /vault/secrets/dbvalues
+        #     exec /usr/local/bin/docker-entrypoint.sh mysqld
+
+
+        # env:
+        # - name: MYSQL_ROOT_PASSWORD
+        #   valueFrom:
+        #     secretKeyRef:
+        #       name: {{ .Values.db.secretsmysql }}
+        #       key: MYSQL_ROOT_PASSWORD
+ 
+        # - name: MYSQL_DATABASE
+        #   valueFrom:
+        #     secretKeyRef:
+        #       name: {{ .Values.db.secretsmysql }}
+        #       key: DB_NAME
+
+        # - name: MYSQL_USER
+        #   valueFrom:
+        #     secretKeyRef:
+        #       name: {{ .Values.db.secretsmysql }}
+        #       key: DB_USER
+
+        # - name: MYSQL_PASSWORD
+        #   valueFrom:
+        #     secretKeyRef:
+        #       name: {{ .Values.db.secretsmysql }}
+        #       key: DB_PASSWORD
