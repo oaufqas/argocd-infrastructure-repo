@@ -5,15 +5,14 @@ server:
     name: rent
     port: 5000
     image: rvlxx/rent
-    tag: "local"
+    tag: "860ad00d"
   serviceName: server-svc
   imagesecret: registry-secret
   scname: nfs
   pvcname: server-shared-storage
   storage: 3Gi
-  appsecret: server-values 
+  appsecret: server-values
   # saname: server-sa
-
 db:
   name: mysql
   image: mysql:8.0
@@ -22,7 +21,6 @@ db:
   cfgmysqlinit: initssql
   storage: 1Gi
   saname: db-sa
-
 ssl:
   enabled: true
   domain: kycaka.com
