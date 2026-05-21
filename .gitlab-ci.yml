@@ -1,0 +1,145 @@
+stages:
+  - build
+  - deploy
+
+
+build:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD
+    - echo "VITE_API_URL=${VITE_API_URL}" > ./client/.env
+  script:
+    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHORT_SHA .
+    - docker push $IMAGE_NAME:$CI_COMMIT_SHORT_SHA
+  only:
+    - master
+
+# Kubernetes Argo-CD variant
+
+update_manifests:
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache git yq
+  script:
+    - git config --global user.email "gitlab@runner.com"
+    - git config --global user.name "CI runner"
+
+    - git clone https://oauth2:${GITHUB_TOKEN}@${GITHUB_REPO} infra
+    - cd infra/charts/app-chart
+
+    - yq -i '.server.container.tag = "'$CI_COMMIT_SHORT_SHA'"' values-prod.yaml
+    - git diff --quiet && exit 0
+
+    - git add values-prod.yaml
+    - git commit -m "CD update app image tag to $CI_COMMIT_SHORT_SHA"
+    - git push origin master
+
+
+
+
+
+
+
+
+# Ansible CD variant
+
+
+# .ssh_conection: &ssh_connection
+#   stage: deploy
+#   image: alpine:latest
+#   before_script:
+#     - apk add --no-cache ansible openssh-client
+#     - mkdir -p ~/.ssh
+#     - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+#     - chmod 600 ~/.ssh/id_rsa
+#     - ssh-keyscan $DOMAIN >> ~/.ssh/known_hosts
+#     - echo "$VAULT_PASS" > ./ansible_deploy_rent/.vault_pass
+#   rules:
+#     - if: '$CI_COMMIT_BRANCH == "master"'
+
+
+# full-server-setup:
+#   <<: *ssh_connection
+#   script:
+#     - cd ansible_deploy_rent
+#     - ansible-playbook ans_deploy.yml --vault-password-file .vault_pass --tags setup-server,ssl,deploy -i hosts.ini
+#   when: manual
+
+
+# deploy-app:
+#   <<: *ssh_connection
+#   script:
+#     - cd ansible_deploy_rent
+#     - ansible-playbook --tags deploy ans_deploy.yml --vault-password-file .vault_pass -i hosts.ini
+#   when: on_success
+
+
+# renew-ssl:
+#   <<: *ssh_connection
+#   script:
+#     - cd ansible_deploy_rent
+#     - ansible-playbook --tags ssl ans_deploy.yml --vault-password-file .vault_pass -i hosts.ini
+#   when: manual
+
+
+
+
+
+
+
+# Gitlab CD variant
+
+
+# stages:
+#   - build
+#   - deploy
+
+# deploy:
+#   stage: deploy
+#   script:
+#     # 1. Проверяем наличие папки. Если её нет — создаем и настраиваем права.
+#     - |
+#       if [ ! -d "/rent/.git" ]; then
+#         echo "Directory /rent not found or not a git repo. Initializing..."
+#         sudo mkdir -p /rent
+#         sudo chown gitlab-runner:gitlab-runner /rent
+#         git clone https://gitlab.com/oaufqas/rent.git /rent
+#       fi
+    
+#     # 2. Переходим и обновляем код
+#     - cd /rent
+#     - git config --global --add safe.directory /rent
+#     - git pull origin master
+    
+#     # 3. Создаем конфигурационные файлы
+#     - echo "VITE_API_URL=${VITE_API_URL}" > client/.env
+#     - |
+#       cat > server/.env << EOF
+#       PORT=${PORT}
+#       HOST=${HOST}
+#       DB_HOST=${DB_HOST}
+#       DB_PORT=${DB_PORT}
+#       DB_NAME=${DB_NAME}
+#       DB_USER=${DB_USER}
+#       DB_PASSWORD=${DB_PASSWORD}
+#       JWT_ACCESS_KEY=${JWT_ACCESS_KEY}
+#       JWT_REFRESH_KEY=${JWT_REFRESH_KEY}
+#       ADMIN_EMAIL=${ADMIN_EMAIL}
+#       MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+#       PROD=${PROD}
+#       GMAIL_USER=${GMAIL_USER}
+#       GMAIL_PASS=${GMAIL_PASS}
+#       API_URL=${API_URL}
+#       CLIENT_URL=${CLIENT_URL}
+#       EOF
+    
+#     # 4. Перезапуск контейнеров
+#     - docker compose stop server nginx
+#     - docker compose rm -f server nginx
+#     - docker compose up -d --build server nginx
+#   only:
+#     - master
