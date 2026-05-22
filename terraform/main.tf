@@ -117,6 +117,20 @@ resource "yandex_kubernetes_node_group" "nodes" {
   }
 }
 
+resource "helm_release" "argocd" {
+  name = "argocd"
+  chart = "../charts/argo-cd"
+  namespace = "argocd"
+  create_namespace = true
+
+  set = [
+    {
+      name  = "configs.secret.argocdServerAdminPassword"
+      value = "$2a$10$rDKvK5S772a.wZl0mCAtXO.Hn8Zq9A8lP.tS/WJ1Uo.9C.kP2kS.e"
+    }
+  ]
+}
+
 # resource "helm_release" "ingress-nginx" {
 #   name             = "ingress-nginx"
 #   repository       = "https://kubernetes.github.io/ingress-nginx"
