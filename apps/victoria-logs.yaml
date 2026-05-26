@@ -1,0 +1,31 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: victoriaLogs
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-15"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/oaufqas/argocd-infrastructure-repo
+    targetRevision: master
+    path: charts/victoria-logs-single/
+    helm:
+      valueFiles:
+        - my-values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: 5
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 3m 
+    syncOptions:
+      - CreateNamespace=true
