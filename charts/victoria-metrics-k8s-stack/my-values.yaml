@@ -3,6 +3,12 @@ grafana:
   adminPassword: "admin"
   plugins:
     - "victoriametrics-logs-datasource"
+
+  sidecar:
+    datasources:
+      enabled: true
+      defaultDatasourceScrapeInterval: "60s"
+      
   additionalDataSources:
     - name: VictoriaLogs
       type: victoriametrics-logs-datasource
