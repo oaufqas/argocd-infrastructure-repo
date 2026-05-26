@@ -1,0 +1,42 @@
+{{- if .Values.printNotes }}
+{{- if .Values.server.enabled }}
+{{- $ctx := dict "helm" . "appKey" "server" "style" "plain" }}
+{{- $fullname := include "vm.plain.fullname" $ctx }}
+{{- $ns := include "vm.namespace" $ctx }}
+{{- $url := include "vm.url" $ctx }}
+The VictoriaLogs write api can be accessed via port {{ .Values.server.service.servicePort }} on the following DNS name from within your cluster:
+    {{- range $id := until (int .Values.server.replicaCount) }}
+    {{- $_ := set $ctx "appIdx" $id }}
+    {{ include "vm.fqdn" $ctx }}
+    {{- end }}
+
+Logs Ingestion:
+  Get the Victoria Logs service URL by running these commands in the same shell:
+
+{{- if contains "NodePort" .Values.server.service.type }}
+    export NODE_PORT=$(kubectl get --namespace {{ $ns }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ $fullname }})
+    export NODE_IP=$(kubectl get nodes --namespace {{ $ns }} -o jsonpath="{.items[0].status.addresses[0].address}")
+    echo http://$NODE_IP:$NODE_PORT
+{{- else if contains "LoadBalancer" .Values.server.service.type }}
+    NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+      You can watch the status of by running 'kubectl get svc --namespace {{ $ns }} -w {{ $fullname }}'
+
+    export SERVICE_IP=$(kubectl get svc --namespace {{ $ns }} {{ $fullname }} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+    echo http://$SERVICE_IP:{{ .Values.server.service.servicePort }}
+{{- else if contains "ClusterIP"  .Values.server.service.type }}
+    kubectl --namespace {{ $ns }} port-forward svc/{{ $fullname }} {{ .Values.server.service.servicePort }}:{{ .Values.server.service.servicePort }}
+    echo http://localhost:{{ .Values.server.service.servicePort }}
+{{- end }}
+
+  Write URL inside the kubernetes cluster:
+    {{ $url }}<protocol-specific-write-endpoint>
+
+  See the documentation for log ingestion and supported write endpoints at https://docs.victoriametrics.com/victorialogs/data-ingestion/.
+
+Read Data:
+  The following URL can be used to query data:
+    {{ $url }}
+
+  See the documentation for log querying UI at https://docs.victoriametrics.com/victorialogs/querying/#web-ui or HTTP API at https://docs.victoriametrics.com/victorialogs/querying/#http-api
+{{- end }}
+{{- end }}

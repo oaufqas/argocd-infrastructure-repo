@@ -1,0 +1,25 @@
+grafana:
+  enabled: true
+  adminPassword: "admin"
+  plugins:
+    - "victoriametrics-logs-datasource"
+  additionalDataSources:
+    - name: VictoriaLogs
+      type: victoriametrics-logs-datasource
+      access: proxy
+      url: http://logs-victoria-logs-single-server.monitoring:9428
+
+vmsingle:
+  enabled: true
+  spec:
+    retentionPeriod: "14d"
+    storage:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: "yc-network-hdd" 
+      resources:
+        requests:
+          storage: 2Gi
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "128Mi"

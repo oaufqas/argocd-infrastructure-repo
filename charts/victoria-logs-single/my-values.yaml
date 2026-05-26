@@ -1,0 +1,9 @@
+server:
+  retentionPeriod: "3d"
+  storage:
+    accessModes: ["ReadWriteOnce"]
+    storageClassName: "yc-network-hdd"
+    size: 2Gi
+
+vector:
+  enabled: true

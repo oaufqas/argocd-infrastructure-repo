@@ -1,0 +1,9 @@
+server:
+  retentionPeriod: "3d"
+  storage:
+    accessModes: ["ReadWriteOnce"]
+    storageClassName: "standard" # Твой класс в миникубе
+    size: 2Gi
+
+vector:
+  enabled: true
