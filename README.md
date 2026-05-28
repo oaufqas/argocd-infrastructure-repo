@@ -1,6 +1,34 @@
-Infrastructure & Deployment Stack: Cloud-Native GitOps
+<div align="center">
+Проект представляет собой реализацию современного производственного (Production-ready) цикла для развертывания fullstack приложения, управления инфраструктурой и доставки обновлений в облаке Yandex Cloud.
 
-Проект представляет собой реализацию современного производственного (Production-ready) цикла управления инфраструктурой и доставки приложений в облаке Yandex Cloud.
+https://img.shields.io/badge/Architecture-K8s-blue
+https://img.shields.io/badge/GitOps-ArgoCD-orange
+https://img.shields.io/badge/IaC-Terraform-purple
+https://img.shields.io/badge/Monitoring-VictoriaMetrics-brightgreen
+
+</div>
+
+# Оглавление
+
+- Архитектура проекта
+
+- Технологический стек
+
+- Компоненты и их взаимодействие
+
+- CI/CD Pipeline
+
+- Инфраструктура безопасности
+
+- Мониторинг и Observability
+
+- Структура репозиториев
+
+- Быстрый старт
+
+- Лицензия
+
+# Архитектура проекта
 
 1. Infrastructure as Code (IaC)Terraform: Используется для управления жизненным циклом облачных ресурсов (Provisioning).
 Создание сети (VPC, Subnets) и вычислительных ресурсов (Managed Service for Kubernetes).
@@ -12,7 +40,7 @@ Terraform Helm Provider: Используется исключительно д�
 ArgoCD: Центральный контроллер доставки. Реализует паттерн "App of Apps".
 Синхронизация состояния кластера с Git-репозиторием (Single Source of Truth).
 Автоматический мониторинг дрейфа конфигурации (Self-healing).
-Helm: Пакетный менеджер. Все компоненты (Ingress, Vault, App) упакованы в чарты для управления зависимостями и параметризации через values.yaml.
+Helm: Пакетный менеджер. Все компоненты (Ingress, Vault, App...) упакованы в чарты для управления зависимостями и параметризации через values.yaml.
 
 3. Secret Management & Security
 HashiCorp Vault (Raft HA): Хранилище секретов в режиме высокой доступности с интегрированным хранилищем Raft.
@@ -27,79 +55,280 @@ NFS Server Provisioner: Обеспечение общего хранилища (
 
 5. Continuous Integration (CI)
 GitLab CI:
-Build Stage: Сборка Docker-образов с использованием Kaniko/Docker-in-Docker.
-Registry: Хранение артефактов в Yandex Container Registry.
-Update Stage: Автоматическое обновление тегов образов в GitOps-репозитории.
+Build Stage: Сборка Docker-образов с использованием Docker-in-Docker(DinD).
+Registry: Хранение артефактов в Docker Container Registry.
+Deploy Stage: Автоматическое обновление тегов образов в GitOps-репозитории.
 
 6. Observability (Full Monitoring Stack)
-Prometheus & Grafana: Сбор метрик с инфраструктуры и приложения, визуализация состояния через дашборды.
-Loki & Promtail: Централизованный сбор и агрегация логов со всех подов кластера.
+VictoriaMetrics & Grafana: Сбор метрик с инфраструктуры и приложения, визуализация состояния через дашборды.
+VictoriaLogs & Vector: Централизованный сбор и агрегация логов со всех подов кластера.
 
-Итоговая схема потока данных (Workflow):
-Code Push -> GitLab CI собирает образ и пушит в Registry.
-GitOps Update -> GitLab CI правит версию чарта в Infra-репозитории.
-Sync -> ArgoCD видит изменения и обновляет ресурсы в K8s.Runtime -> App запрашивает секреты через ESO из Vault, Ingress направляет трафик, а Prometheus собирает метрики.
+### Общая схема взаимодействия
+
+![alt text](./images/image1.png)
+
+### Детальная схема компонентов
+
+![alt text](./images/image2.png)
+
+# Технологический стек
+
+### Infrastructure & Orchestration
+
+|Технология | Версия | Назначение
+|---|---|---
+|Kubernetes | 1.28 | Оркестрация контейнеров (Yandex Managed)
+|Terraform | 1.6+ | Infrastructure as Code
+|Helm | 3.13+ | Package manager для K8s
+|ArgoCD | 2.10+ | GitOps непрерывная доставка
+|GitLab CI | Latest | CI/CD пайплайны
 
 
-Cloud-Native Production Infrastructure
+### Security & Secrets
 
-Проект автоматизированного развертывания отказоустойчивой инфраструктуры в Yandex Cloud с использованием методологии GitOps и полного цикла CI/CD.
+|Технология | Версия | Назначение
+|---|---|---
+|HashiCorp Vault | 1.15+ | Хранение и управление секретами
+|External Secrets Operator | 0.9+ | Синхронизация Vault → K8s Secrets
+|Cert-manager | 1.13+ | Автоматические SSL сертификаты
+|Yandex KMS | - | Auto Unseal для Vault
 
-Архитектура стека
+### Observability
 
-Core Infrastructure
-Cloud: Yandex Cloud (Managed Service for Kubernetes)
-IaC: Terraform (VPC, Кворум узлов, KMS, IAM)
-GitOps: ArgoCD (реализация паттерна App-of-Apps)
-Ingress: Nginx Ingress Controller + Cert-Manager (Let's Encrypt TLS)
+|Технология | Версия | Назначение
+|---|---|---
+|VictoriaMetrics | Latest | Сбор и хранение метрик
+|VictoriaLogs | Latest | Сбор и хранение логов
+|Grafana | 10+ | Визуализация метрик и логов
+|Promtail | Latest | Агент сбора логов
 
-Security & Secrets
-Vault: HashiCorp Vault (HA mode + Raft)
-Auto-unseal: Интеграция с Yandex KMS
-Sync: External Secrets Operator (ESO) для доставки секретов в K8s
-Auth: Kubernetes ServiceAccount Auth
+### Networking & Storage
 
-Observability
-Metrics: Prometheus & Grafana (мониторинг ресурсов и здоровья кластера)
-Logs: Loki & Promtail (агрегация логов)
+|Технология | Версия | Назначение
+|---|---|---
+|Ingress NGINX | 1.9+ | Балансировка и SSL терминация
+|NFS Server Provisioner | Latest | Общее хранилище RWX
+|CoreDNS | 1.11+ | DNS внутри кластера
 
-Поток доставки (CI/CD Workflow)
-Develop: Разработчик пушит код в GitLab.
-Build: GitLab CI собирает Docker-образ и пушит его в Yandex Container Registry.
-Deploy: GitLab CI обновляет версию образа в GitOps-репозитории.
-Sync: ArgoCD обнаруживает расхождение (drift) и синхронизирует состояние кластера с Git.
-Inject: ESO забирает необходимые переменные окружения из Vault и создает K8s Secrets.
+### Application Stack
 
-Структура репозиториев1. [Infrastructure-Repo] (Terraform)Содержит описание "железа" и базовую установку ArgoCD.
+|Компонент | Технологии
+|---|---
+|Backend | Node.js, Express, Sequelize, JWT, 2FA
+|Frontend | React, Vite, CSS, MobX, Axios
+|Database | MySQL 8.0 (StatefulSet + PVC)
 
-terraform/
-├── main.tf          # Описание кластера и Helm-релиза ArgoCD
-├── variables.tf     # Переменные окружения облака
-└── providers.tf     # Настройки провайдеров YC и Helm
+# Компоненты и их взаимодействие
 
-2. [GitOps-Repo] (ArgoCD & Helm)
+## CI/CD Pipeline Flow
 
-Единый источник истины для всех сервисов внутри кластера.
+![alt text](./images/image3.png)
 
-apps/                # Манифесты ArgoCD Application
-  ├── vault.yaml
-  ├── ingress.yaml
-  └── my-app.yaml
+## Security Flow (Vault + ESO)
 
-values/              # Конфигурации для Helm-чартов
-  ├── vault-values.yaml
-  └── app-values.yaml
+![alt text](./images/image4.png)
 
-Быстрый старт
-Развертывание фундамента:
-bashcd terraform && terraform apply
+## Observability Flow
 
-Инициализация Vault (единоразово):
-bashkubectl exec -ti vault-0 -n vault -- vault operator init
+![alt text](./images/image5.png)
 
-Запуск GitOps:
-Применить root-app.yaml в кластер, после чего ArgoCD автоматически развернет все остальные компоненты.
+### CI/CD Pipeline
 
-Что можно улучшить в этом README:
-Добавить схему архитектуры (сделанную в draw.io или Excalidraw).
-Добавить скриншоты Grafana Dashboards и ArgoCD UI.
+```yaml
+stages:
+  - build
+  - deploy
+
+build:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD
+    - echo "VITE_API_URL=${VITE_API_URL}" > ./client/.env
+  script:
+    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHORT_SHA . # Уникальный тег для каждой сборки
+    - docker push $IMAGE_NAME:$CI_COMMIT_SHORT_SHA
+  only:
+    - master
+
+update_manifests:
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache git yq
+  script:
+    - git config --global user.email "gitlab@runner.com"
+    - git config --global user.name "CI runner"
+
+    - git clone https://oauth2:${GITHUB_TOKEN}@${GITHUB_REPO} infra
+    - cd infra/charts/app-chart
+
+    - yq -i '.server.container.tag = "'$CI_COMMIT_SHORT_SHA'"' values-prod.yaml
+    - git diff --quiet && exit 0
+
+    - git add values-prod.yaml
+    - git commit -m "CD update app image tag to $CI_COMMIT_SHORT_SHA"
+    - git push origin master
+```
+
+Pipeline Steps:
+Build — сборка Docker образа с многоступенчатой оптимизацией и публикация образа в Docker Container Registry.
+
+Deploy — обновление values.yaml путем коммита в инфраструктурном репозитории (GitHub) с новым тегом.
+
+### Инфраструктура безопасности: Vault + YC KMS + External Secrets Operator
+
+```yaml
+# Взаимодействие компонентов
+Vault (Auto Unseal via Yandex KMS)
+  ├── secrets engine: kv-v2 (path: secret/)
+  ├── auth method: kubernetes
+  ├── policy: app-policy (read secret/data/*)
+  └── role: eso-role (bound SA: vault-sa)
+
+External Secrets Operator
+  ├── reads secrets from Vault
+  ├── creates K8s Secret
+  └── sync period: 1 hour
+
+Application
+  └── envFrom: secretRef (K8s Secret)
+```
+
+### SSL/TLS (cert-manager)
+
+```yaml
+Issuer: ClusterIssuer (Let's Encrypt)
+  ├── server: acme-v02.api.letsencrypt.org
+  ├── solver: http01 (ingress)
+  └── email: admin@domain.com
+
+Certificate
+  ├── secretName: domain-tls-secret
+  ├── dnsNames: [domain.com, www.domain.com]
+  └── issuerRef: letsencrypt-prod
+```
+
+### Мониторинг и Observability
+
+Метрики (VictoriaMetrics)
+
+```yaml
+k8s-metrics:
+  - node_exporter (CPU, RAM, Disk, Network)
+  - kube-state-metrics (pods, deployments, services)
+  - kubelet (cadvisor: container metrics)
+  - api-server, controller-manager, scheduler
+  - core-dns, etcd
+
+app-metrics:
+  - http_requests_total (rate, errors, latency)
+  - db_connection_pool (active, idle, wait)
+  - business_metrics (users, orders, etc.)
+```
+
+Логи (VictoriaLogs)
+
+```logql
+# Получить логи пода с ошибками
+{pod="backend-xxx", namespace="prod"} |~ "(?i)error|fatal|exception"
+
+# Фильтр по временному диапазону
+{app="frontend"} |= "GET /api" |= "500"
+
+# Агрегация ошибок по namespace
+sum by (namespace) (count_over_time({pod=~".*"} |= "error" [5m]))
+```
+
+### Grafana Dashboards
+
+|Dashboard | Источник | Описание
+|---|---|---
+|K8s Cluster Monitoring | VictoriaMetrics | Состояние кластера, ресурсы нод
+|Pods Dashboard | VictoriaMetrics | CPU/Memory per pod, restarts
+|App Metrics | VictoriaMetrics | RPS, ошибки, latency
+|Logs Explorer | VictoriaLogs | Поиск и фильтрация логов
+
+# Структура репозиториев
+
+### Application Repository (GitLab)
+
+```text
+rent/
+├── client/                 # React + Vite фронтенд
+│   ├── src/
+│   ├── public/
+│   └── package.json
+├── server/                 # Node.js + Express бэкенд
+│   ├── src/
+│   │   ├── controllers/
+│   │   ├── models/
+│   │   ├── routes/
+│   │   └── services/
+│   ├── Dockerfile
+│   └── package.json
+├── .gitlab-ci.yml         # CI/CD пайплайн
+└── README.md
+```
+
+### Infrastructure Repository (GitHub)
+
+```text
+infrastructure/
+├── terraform/              # IaC для Yandex Cloud
+│   ├── main.tf            # кластер, сети, диски, KMS
+│   ├── variables.tf
+│   └── outputs.tf
+├── argocd/                 # GitOps манифесты
+│   ├── root-app.yaml      # App of Apps
+│   └── apps/
+│       ├── cert-manager.yaml
+│       ├── ingress-nginx.yaml
+│       ├── nfs-server.yaml
+│       ├── vault.yaml
+│       ├── external-secrets.yaml
+│       └── rent-app.yaml
+├── charts/                 # Helm чарты
+│   ├── vault/values.yaml
+│   ├── monitoring/values.yaml
+│   └── rent-app/values.yaml
+└── README.md
+```
+
+# Быстрый старт
+
+Prerequisites
+
+- Yandex Cloud аккаунт
+- GitLab проект с кодом приложения
+- GitHub репозиторий для инфраструктуры
+- Установленные: terraform, helm, kubectl
+
+Step 1: Развернуть инфраструктуру
+
+```bash
+cd argocd-infrastructure-repo/terraform
+terraform init
+terraform apply -auto-approve
+```
+
+Step 2: Применить главный файл argo (App of Apps)
+
+```bash
+kubectl apply -f argocd/root-app.yaml
+```
+
+Step 3: Настроить A-DNS запись домена в интерфейсе провайдера на IP Ingress контроллера кластера, для прохождения HTTP челленджа (TLS).
+
+Step 4: Настроить GitLab CI
+
+```bash
+# Добавить переменные в GitLab CI/CD Settings:
+- CI_REGISTRY_USER
+- CI_REGISTRY_PASSWORD
+- GITHUB_TOKEN
+- VAULT_ADDR
+- VAULT_TOKEN
+```

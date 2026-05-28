@@ -3,7 +3,8 @@ grafana:
   adminPassword: "admin"
   plugins:
     - "victoriametrics-logs-datasource"
-  additionalDataSources:
+defaultDatasources:
+  extra: 
     - name: VictoriaLogs
       type: victoriametrics-logs-datasource
       access: proxy
@@ -12,10 +13,10 @@ grafana:
 vmsingle:
   enabled: true
   spec:
-    retentionPeriod: "7d"
+    retentionPeriod: "14d"
     storage:
       accessModes: ["ReadWriteOnce"]
-      storageClassName: "standard" 
+      storageClassName: "yc-network-hdd" 
       resources:
         requests:
           storage: 2Gi
