@@ -1,14 +1,15 @@
 <div align="center">
 Проект представляет собой реализацию современного производственного (Production-ready) цикла для развертывания fullstack приложения, управления инфраструктурой и доставки обновлений в облаке Yandex Cloud.
-
-  <img src="https://img.shields.io/badge/Architecture-K8s-blue" height="15"/>
-  <img width="12" />
-  <img src="https://img.shields.io/badge/GitOps-ArgoCD-orange" height="15"/>
-  <img width="12" />
-  <img src="https://img.shields.io/badge/IaC-Terraform-purple" height="15"/>
-  <img width="12" />
-  <img src="https://img.shields.io/badge/Monitoring-VictoriaMetrics-brightgreen" height="15"/>
-  <img width="12" />
+  <div>
+    <img src="https://img.shields.io/badge/Architecture-K8s-blue" height="20"/>
+    <img width="12" />
+    <img src="https://img.shields.io/badge/GitOps-ArgoCD-orange" height="20"/>
+    <img width="12" />
+    <img src="https://img.shields.io/badge/IaC-Terraform-purple" height="20"/>
+    <img width="12" />
+    <img src="https://img.shields.io/badge/Monitoring-VictoriaMetrics-brightgreen" height="20"/>
+    <img width="12" />
+  </div>
 </div>
 
 # Оглавление
