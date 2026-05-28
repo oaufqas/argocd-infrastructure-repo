@@ -1,0 +1,6 @@
+persistence: 
+  enabled: true
+  size: 4Gi
+  storageClass: "yc-network-hdd"
+storageClass:
+  name: nfs

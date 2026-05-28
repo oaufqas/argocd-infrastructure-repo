@@ -13,7 +13,6 @@ server:
   storage: 3Gi
   appsecret: server-values 
   # saname: server-sa
-
 db:
   name: mysql
   image: mysql:8.0
@@ -22,6 +21,5 @@ db:
   cfgmysqlinit: initssql
   storage: 1Gi
   saname: db-sa
-
 ssl:
   enabled: false

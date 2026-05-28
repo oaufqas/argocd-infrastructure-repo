@@ -12,35 +12,8 @@ spec:
     targetRevision: master
     path: charts/vault/
     helm:
-      values: |
-        injector:
-          enabled: false
-
-        server:
-          dev:
-            enabled: false
-          ha:
-            enabled: true
-            replicas: 1
-            raft:
-              enabled: true
-              setNodeId: true
-              config: |
-                ui = true
-                listener "tcp" {
-                  tls_disable = 1
-                  address = "[::]:8200"
-                  cluster_address = "[::]:8201"
-                }
-                storage "raft" {
-                  path = "/vault/data"
-                }
-          image:
-            repository: mirror.gcr.io/hashicorp/vault
-            tag: 1.15.0
-          dataStorage:
-            enabled: true
-            size: 5Gi
+      valueFiles:
+        - values.prod.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: vault

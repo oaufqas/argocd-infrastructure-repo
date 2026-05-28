@@ -11,14 +11,9 @@ spec:
     repoURL: https://github.com/oaufqas/argocd-infrastructure-repo
     targetRevision: master
     path: charts/nfs-server-provisioner/
-    helm: 
-      values: |
-        persistence: 
-          enabled: true
-          size: 4Gi
-          storageClass: "yc-network-hdd"
-        storageClass:
-          name: nfs
+    helm:
+      valueFiles:
+        - values.prod.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: nfs-system

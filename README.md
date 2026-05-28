@@ -30,8 +30,6 @@
 
 - Быстрый старт
 
-- Лицензия
-
 # Архитектура проекта
 
 1. Infrastructure as Code (IaC)Terraform: Используется для управления жизненным циклом облачных ресурсов (Provisioning).
@@ -223,7 +221,7 @@ Certificate
 k8s-metrics:
   - node_exporter (CPU, RAM, Disk, Network)
   - kube-state-metrics (pods, deployments, services)
-  - kubelet (cadvisor: container metrics)
+  - kubelet (cadvisor; container metrics)
   - api-server, controller-manager, scheduler
   - core-dns, etcd
 
@@ -235,15 +233,10 @@ app-metrics:
 
 Логи (VictoriaLogs)
 
-```logql
-# Получить логи пода с ошибками
-{pod="backend-xxx", namespace="prod"} |~ "(?i)error|fatal|exception"
-
-# Фильтр по временному диапазону
-{app="frontend"} |= "GET /api" |= "500"
-
-# Агрегация ошибок по namespace
-sum by (namespace) (count_over_time({pod=~".*"} |= "error" [5m]))
+```yaml
+logs:
+  - vector (Собирает логи со всех подов, серверов, master-node)
+  - victoria-logs-single-server
 ```
 
 ### Grafana Dashboards
@@ -260,45 +253,68 @@ sum by (namespace) (count_over_time({pod=~".*"} |= "error" [5m]))
 ### Application Repository (GitLab)
 
 ```text
-rent/
+app/
 ├── client/                 # React + Vite фронтенд
 │   ├── src/
 │   ├── public/
 │   └── package.json
 ├── server/                 # Node.js + Express бэкенд
-│   ├── src/
-│   │   ├── controllers/
-│   │   ├── models/
-│   │   ├── routes/
-│   │   └── services/
-│   ├── Dockerfile
+│   ├── config/
+│   │   ├── database.js
+│   │   └── models.js
+│   ├── controllers/
+│   ├── dtos/
+│   ├── middleware/
+│   ├── routes/
+│   ├── services/
+│   ├── utils/
+│   ├── index.js   # main file
 │   └── package.json
+├── uploads/                # Директория загруженных на сервер файлов
+├── kubernetes              # Helm chart приложения
+├── nginx/                  # Конфиги nginx
+├── node_modules/
+├── ansible_deploy_rent    # Вариант с деплоем через ansible & docker compose
+├── ssl                    # Docker compose для сертификатов
 ├── .gitlab-ci.yml         # CI/CD пайплайн
+├── .dockeringnore
+├── .gitignore
+├── docker-compose.yaml    # Docker compose файл
+├── Dockerfile             # Dockerfile для сборки образов
 └── README.md
 ```
 
 ### Infrastructure Repository (GitHub)
 
 ```text
-infrastructure/
+argocd-infrastructure-repo/
 ├── terraform/              # IaC для Yandex Cloud
 │   ├── main.tf            # кластер, сети, диски, KMS
-│   ├── variables.tf
-│   └── outputs.tf
-├── argocd/                 # GitOps манифесты
-│   ├── root-app.yaml      # App of Apps
-│   └── apps/
-│       ├── cert-manager.yaml
-│       ├── ingress-nginx.yaml
-│       ├── nfs-server.yaml
-│       ├── vault.yaml
-│       ├── external-secrets.yaml
-│       └── rent-app.yaml
+│   └── variables.tf
+├── apps/                 # GitOps манифесты applications
+│   ├── cert-manager.yaml
+│   ├── victoria-logs.yaml
+│   ├── victoria-metrics.yaml
+│   ├── ingress-nginx.yaml
+│   ├── nfs-server.yaml
+│   ├── vault.yaml
+│   ├── external-secrets.yaml
+│   └── app.yaml
 ├── charts/                 # Helm чарты
-│   ├── vault/values.yaml
-│   ├── monitoring/values.yaml
-│   └── rent-app/values.yaml
-└── README.md
+│   ├── vault/values.prod.yaml
+│   ├── victoria-logs-single/values.prod.yaml
+│   ├── victoria-metrics-k8s-stack/values.prod.yaml
+│   ├── argo-cd/
+│   ├── cert-manager/
+│   ├── external-secrets/
+│   ├── ingress-nginx/
+│   ├── nfs-server-provisioner/values.prod.yaml
+│   └── app-chart/values.prod.yaml
+├── .gitlab-ci.yml          # CI-CD gitlab
+├── .gitignore         
+├── images/                 # Графики для readme
+├── README.md
+└── root-app.yaml           # Точка входа (App of Apps)
 ```
 
 # Быстрый старт
@@ -333,6 +349,6 @@ Step 4: Настроить GitLab CI
 - CI_REGISTRY_USER
 - CI_REGISTRY_PASSWORD
 - GITHUB_TOKEN
-- VAULT_ADDR
-- VAULT_TOKEN
+- GITHUB_REPO
+- IMAGE_NAME
 ```

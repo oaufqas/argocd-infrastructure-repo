@@ -13,7 +13,7 @@ spec:
     path: charts/app-chart
     helm:
       valueFiles:
-        - values-prod.yaml
+        - values.prod.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: default
