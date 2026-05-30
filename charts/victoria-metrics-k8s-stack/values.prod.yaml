@@ -1,3 +1,6 @@
+nameOverride: "vm"
+fullnameOverride: "vm"
+
 grafana:
   enabled: true
   adminPassword: "admin"
@@ -8,7 +11,7 @@ defaultDatasources:
     - name: VictoriaLogs
       type: victoriametrics-logs-datasource
       access: proxy
-      url: http://logs-victoria-logs-single-server.monitoring:9428
+      url: http://victoria-logs-server.monitoring:9428
 
 vmsingle:
   enabled: true

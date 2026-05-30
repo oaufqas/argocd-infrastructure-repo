@@ -1,4 +1,5 @@
 server:
+  fullnameOverride: "victoria-logs-server"
   retentionPeriod: "3d"
   storage:
     accessModes: ["ReadWriteOnce"]
