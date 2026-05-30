@@ -176,6 +176,7 @@ update_manifests:
 ```
 
 Pipeline Steps:
+
 Build — сборка Docker образа с многоступенчатой оптимизацией и публикация образа в Docker Container Registry.
 
 Deploy — обновление values.yaml путем коммита в инфраструктурном репозитории (GitHub) с новым тегом.
@@ -334,15 +335,47 @@ terraform init
 terraform apply -auto-approve
 ```
 
-Step 2: Применить главный файл argo (App of Apps)
+Step 2: Создать в YC KMS синхронный ключ и положить его ID в values valut для автоматического unseal. Настроить A-DNS запись домена в интерфейсе провайдера на IP Ingress контроллера кластера, для прохождения HTTP челленджа (TLS).
+
+Step 3: Применить главный файл argo (App of Apps)
 
 ```bash
 kubectl apply -f argocd/root-app.yaml
 ```
 
-Step 3: Настроить A-DNS запись домена в интерфейсе провайдера на IP Ingress контроллера кластера, для прохождения HTTP челленджа (TLS).
+Step 4: Один раз настроить vault и заполнить секретами:
 
-Step 4: Настроить GitLab CI
+```bash
+kubectl exec -it vault-0 -n vault -- sh
+
+vault operator init
+
+vault secrets enable -path=secret kv-v2
+
+vault auth enable kubernetes
+
+vault write auth/kubernetes/config \
+    token_reviewer_jwt="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
+    kubernetes_host="https://${KUBERNETES_PORT_443_TCP_ADDR}:443" \
+    kubernetes_ca_cert=@/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+
+vault policy write app-policy - <<EOF
+path "secret/data/*" {
+  capabilities = ["read"]
+}
+EOF
+
+vault write auth/kubernetes/role/eso-role \
+    bound_service_account_names=vault-sa \
+    bound_service_account_namespaces=default \
+    policies=app-policy \
+    ttl=1h
+
+# Наполнение секретами
+vault put secret/app...
+```
+
+Step 5: Настроить GitLab CI для полноценного CI-CD
 
 ```bash
 # Добавить переменные в GitLab CI/CD Settings:

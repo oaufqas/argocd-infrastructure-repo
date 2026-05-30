@@ -20,6 +20,9 @@ server:
         storage "raft" {
           path = "/vault/data"
         }
+        seal "yandexcloudkms" {
+          kms_key_id = "abjvlc2rtvg7cfo3n8q0"
+        }
   image:
     repository: mirror.gcr.io/hashicorp/vault
     tag: 1.15.0

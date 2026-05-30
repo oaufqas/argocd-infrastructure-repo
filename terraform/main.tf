@@ -31,13 +31,6 @@ resource "yandex_vpc_network" "k8s-network" {
   name = "k8s-network"
 }
 
-# resource "yandex_vpc_address" "ingress-static-ip" {
-#   name = "ingress-ip"
-#   external_ipv4_address {
-#     zone_id = var.zone
-#   }
-# }
-
 resource "yandex_vpc_subnet" "k8s-subnet" {
   name           = "k8s-subnet"
   network_id     = yandex_vpc_network.k8s-network.id
@@ -51,7 +44,7 @@ resource "yandex_iam_service_account" "k8s-sa" {
 }
 
 resource "yandex_resourcemanager_folder_iam_member" "k8s-roles" {
-  for_each  = toset(["editor", "container-registry.images.puller"])
+  for_each  = toset(["editor", "container-registry.images.puller", "kms.keys.encrypterDecrypter"])
   folder_id = var.folder_id
   role      = each.key
   member    = "serviceAccount:${yandex_iam_service_account.k8s-sa.id}"
@@ -123,16 +116,22 @@ resource "helm_release" "argocd" {
   namespace = "argocd"
   create_namespace = true
 
-  # set = [
-  #   {
-  #     name  = "configs.secret.argocdServerAdminPassword"
-  #     value = "$2a$10$8v5p.B4gO418tD8g60M9ZuzpEq5HofH5YvM398wA0vBfPzK5vDfeS" # admin
-  #   }
-  # ]
   depends_on = [
     yandex_kubernetes_cluster.k8s-cluster
   ]
 }
+
+
+
+
+
+
+# resource "yandex_vpc_address" "ingress-static-ip" {
+#   name = "ingress-ip"
+#   external_ipv4_address {
+#     zone_id = var.zone
+#   }
+# }
 
 # resource "helm_release" "ingress-nginx" {
 #   name             = "ingress-nginx"
