@@ -350,6 +350,8 @@ kubectl exec -it vault-0 -n vault -- sh
 
 vault operator init
 
+vault login
+
 vault secrets enable -path=secret kv-v2
 
 vault auth enable kubernetes

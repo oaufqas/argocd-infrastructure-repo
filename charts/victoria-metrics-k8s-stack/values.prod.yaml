@@ -27,3 +27,13 @@ vmsingle:
       requests:
         cpu: "50m"
         memory: "128Mi"
+
+prometheus-node-exporter:
+  service:
+    port: 9100
+    targetPort: 9100
+  serviceMonitor:
+    enabled: true
+    additionalLabels:
+      vmagent: "vm"
+      release: "victoria-metrics"

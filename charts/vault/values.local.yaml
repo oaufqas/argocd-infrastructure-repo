@@ -20,8 +20,8 @@ server:
         storage "raft" {
           path = "/vault/data"
         }
-  image:
-    repository: mirror.gcr.io/hashicorp/vault
+  # image:
+  #   repository: mirror.gcr.io/hashicorp/vault
     tag: 1.15.0
   dataStorage:
     enabled: true
