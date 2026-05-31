@@ -134,7 +134,7 @@ VictoriaLogs & Vector: Централизованный сбор и агрега
 
 ![alt text](./images/image5.png)
 
-### CI/CD Pipeline
+# CI/CD Pipeline
 
 ```yaml
 stages:
@@ -181,7 +181,8 @@ Build — сборка Docker образа с многоступенчатой �
 
 Deploy — обновление values.yaml путем коммита в инфраструктурном репозитории (GitHub) с новым тегом.
 
-### Инфраструктура безопасности: Vault + YC KMS + External Secrets Operator
+
+# Инфраструктура безопасности: Vault + YC KMS + External Secrets Operator
 
 ```yaml
 # Взаимодействие компонентов
@@ -200,21 +201,56 @@ Application
   └── envFrom: secretRef (K8s Secret)
 ```
 
+### Подробная схема: Как работает связка Vault и Yandex KMS.
+
+В реальном («не-dev») режиме Vault шифрует все ваши секреты одним главным ключом — Master Key.
+
+1. При обычной инициализации Master Key разрезается на 5 частей (Unseal Keys), которые раздаются инженерам, а сам Master Key стирается из памяти.
+
+2. При использовании Auto-Unseal применяется технология Envelope Encryption (конвертное шифрование):
+    - Vault генерирует Master Key.
+    - Он отправляет этот Master Key в Yandex KMS.
+    - Yandex KMS шифрует его своим внутренним аппаратным ключом (который никто никогда не увидит) и возвращает Vault зашифрованный «конверт» (строку).
+    - Vault сохраняет этот зашифрованный конверт у себя на диске (в папке `/vault/data`).
+
+3. Процесс авто-распечатывания при старте: Под Vault просыпается ➔ читает зашифрованный конверт с диска ➔ отправляет его в API Yandex KMS ➔ KMS расшифровывает конверт и возвращает чистый Master Key в оперативную память Vault ➔ Vault готов к работе.
+
 ### SSL/TLS (cert-manager)
 
 ```yaml
 Issuer: ClusterIssuer (Let's Encrypt)
-  ├── server: acme-v02.api.letsencrypt.org
+  ├── server: https://acme-v02.api.letsencrypt.org/directory
   ├── solver: http01 (ingress)
-  └── email: admin@domain.com
+  └── email: admin@email.com
 
 Certificate
-  ├── secretName: domain-tls-secret
-  ├── dnsNames: [domain.com, www.domain.com]
-  └── issuerRef: letsencrypt-prod
+  ├── secretName: secret-tls
+  ├── dnsNames: [any.domain.com]
+  └── issuerRef: letsencrypt-issuer
 ```
 
-### Мониторинг и Observability
+Процесс получения SSL-сертификатов в Kubernetes с помощью cert-manager полностью автоматизирован:
+1. В кластере больше не нужно вручную генерировать ключи, cкачивать файлы или следить за датой окончания действия.
+2. (Let's Encrypt выдает сертификаты на 90 дней, а cert-manager сам обновляет их за 30 дней до конца)
+
+- Архитектурная схема ACME (Automated Certificate Management Environment):
+
+```text
+   [Кластер K8s]                                       [Let's Encrypt API]
+       |                                                         |
+       |cert-manager  --- (1. Просит сертификат для домена) ---> |
+       |                                                         |
+       |<-- (2. Возвращает секретный токен проверки/Challenge) --|
+       |                                                         |
+      (3. Создает временный под и путь /.well-known/acme-challenge/)
+       |                                                         |
+       |<-- (4. Робот Let's Encrypt заходит по HTTP на сайт) --- |
+       |                                                         |
+       |--- (5. Проверка прошла -> Выпускает SSL сертификат) --> |
+
+```
+
+# Мониторинг и Observability
 
 Метрики (VictoriaMetrics)
 
@@ -343,7 +379,7 @@ Step 3: Применить главный файл argo (App of Apps)
 kubectl apply -f argocd/root-app.yaml
 ```
 
-Step 4: Один раз настроить vault и заполнить секретами:
+Step 4: Один раз настроить vault и заполнить секретами (unseal автоматический):
 
 ```bash
 kubectl exec -it vault-0 -n vault -- sh
