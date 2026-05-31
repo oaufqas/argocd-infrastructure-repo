@@ -22,7 +22,7 @@ db:
   storage: 1Gi
   saname: db-sa
 ssl:
-  enabled: false
+  enabled: true
   domain: kycaka.com
   email: zxcvbn@gmail.com
   certname: cert-tls
