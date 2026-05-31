@@ -5,7 +5,7 @@ server:
     name: rent
     port: 5000
     image: rvlxx/rent
-    tag: "cec973be"
+    tag: "177157a4"
   serviceName: server-svc
   imagesecret: registry-secret
   scname: nfs
