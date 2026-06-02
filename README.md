@@ -1,5 +1,5 @@
 <div align="center">
-Проект представляет собой реализацию современного производственного (Production-ready) цикла для развертывания fullstack приложения, управления инфраструктурой и доставки обновлений в облаке Yandex Cloud.
+Проект представляет собой реализацию современного производственного (Production-ready) цикла для развертывания fullstack приложения в кластере kubernetes, управления инфраструктурой и доставки обновлений в облаке Yandex Cloud.
   <div>
     <img src="https://img.shields.io/badge/Architecture-K8s-blue" height="20"/>
     <img width="12" />
@@ -150,7 +150,7 @@ build:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD
     - echo "VITE_API_URL=${VITE_API_URL}" > ./client/.env
   script:
-    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHORT_SHA . # Уникальный тег для каждой сборки
+    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHORT_SHA .
     - docker push $IMAGE_NAME:$CI_COMMIT_SHORT_SHA
   only:
     - master
@@ -167,10 +167,10 @@ update_manifests:
     - git clone https://oauth2:${GITHUB_TOKEN}@${GITHUB_REPO} infra
     - cd infra/charts/app-chart
 
-    - yq -i '.server.container.tag = "'$CI_COMMIT_SHORT_SHA'"' values-prod.yaml
+    - yq -i '.server.container.tag = "'$CI_COMMIT_SHORT_SHA'"' values.prod.yaml
     - git diff --quiet && exit 0
 
-    - git add values-prod.yaml
+    - git add values.prod.yaml
     - git commit -m "CD update app image tag to $CI_COMMIT_SHORT_SHA"
     - git push origin master
 ```
@@ -363,23 +363,41 @@ Prerequisites
 - GitHub репозиторий для инфраструктуры
 - Установленные: terraform, helm, kubectl
 
-Step 1: Развернуть инфраструктуру
+Step 1: Установка yc cli и получение токена для terraform
 
 ```bash
-cd argocd-infrastructure-repo/terraform
+curl -sSL https://storage.yandexcloud.net/yandexcloud-yc/install.sh | bash
+
+yc init --username=<email_addr>
+
+yc iam create-token # --> ./terraform/terraform.tfvars, также нужно указать в переменных cloud_id и folder_id из яндекса.
+```
+
+
+Step 2: Развернуть инфраструктуру
+
+```bash
+cd ./terraform
+
 terraform init
+
 terraform apply -auto-approve
 ```
 
-Step 2: Создать в YC KMS синхронный ключ и положить его ID в values valut для автоматического unseal. Настроить A-DNS запись домена в интерфейсе провайдера на IP Ingress контроллера кластера, для прохождения HTTP челленджа (TLS).
 
-Step 3: Применить главный файл argo (App of Apps)
+Step 3: Создать в YC KMS синхронный ключ и положить его ID в values valut по пути `./charts/vault/values.prod.yaml` строка `kms_key_id = "KEY_ID"` для автоматического unseal. Указать домен в `./charts/app-chart/values.prod.yaml` либо выключить параметр ssl.
+
+
+Step 4: Применить главный файл argo (App of Apps)
 
 ```bash
 kubectl apply -f argocd/root-app.yaml
+
+# Настроить A-DNS запись домена в интерфейсе провайдера на IP Ingress контроллера кластера, после того, как ip адрес появится, для прохождения HTTP челленджа (TLS).
 ```
 
-Step 4: Один раз настроить vault и заполнить секретами (unseal автоматический):
+
+Step 5: Один раз настроить vault и заполнить секретами (unseal автоматический):
 
 ```bash
 kubectl exec -it vault-0 -n vault -- sh
@@ -413,13 +431,16 @@ vault write auth/kubernetes/role/eso-role \
 vault put secret/app...
 ```
 
-Step 5: Настроить GitLab CI для полноценного CI-CD
+Step 6: Настроить GitLab CI для полноценного CI-CD
 
 ```bash
+# Создать репозиторий для приложения, скопировать с https://github.com/oaufqas/rent исходный код.
+
 # Добавить переменные в GitLab CI/CD Settings:
 - CI_REGISTRY_USER
 - CI_REGISTRY_PASSWORD
 - GITHUB_TOKEN
 - GITHUB_REPO
 - IMAGE_NAME
+- VITE_API_URL=/api
 ```

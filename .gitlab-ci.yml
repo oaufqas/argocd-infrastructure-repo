@@ -31,10 +31,10 @@ update_manifests:
     - git clone https://oauth2:${GITHUB_TOKEN}@${GITHUB_REPO} infra
     - cd infra/charts/app-chart
 
-    - yq -i '.server.container.tag = "'$CI_COMMIT_SHORT_SHA'"' values-prod.yaml
+    - yq -i '.server.container.tag = "'$CI_COMMIT_SHORT_SHA'"' values.prod.yaml
     - git diff --quiet && exit 0
 
-    - git add values-prod.yaml
+    - git add values.prod.yaml
     - git commit -m "CD update app image tag to $CI_COMMIT_SHORT_SHA"
     - git push origin master
 
