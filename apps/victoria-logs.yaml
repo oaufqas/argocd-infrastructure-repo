@@ -13,7 +13,7 @@ spec:
     path: charts/victoria-logs-single/
     helm:
       valueFiles:
-        - values.prod.yaml
+        - values/prod/victoria-logs-values.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring

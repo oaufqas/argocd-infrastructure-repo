@@ -165,12 +165,12 @@ update_manifests:
     - git config --global user.name "CI runner"
 
     - git clone https://oauth2:${GITHUB_TOKEN}@${GITHUB_REPO} infra
-    - cd infra/charts/app-chart
+    - cd infra/values/prod
 
-    - yq -i '.server.container.tag = "'$CI_COMMIT_SHORT_SHA'"' values.prod.yaml
+    - yq -i '.server.container.tag = "'$CI_COMMIT_SHORT_SHA'"' app-values.yaml
     - git diff --quiet && exit 0
 
-    - git add values.prod.yaml
+    - git add app-values.yaml
     - git commit -m "CD update app image tag to $CI_COMMIT_SHORT_SHA"
     - git push origin master
 ```
@@ -339,14 +339,27 @@ argocd-infrastructure-repo/
 │   └── app.yaml
 ├── charts/                 # Helm чарты
 │   ├── vault/values.prod.yaml
-│   ├── victoria-logs-single/values.prod.yaml
-│   ├── victoria-metrics-k8s-stack/values.prod.yaml
+│   ├── victoria-logs-single/
+│   ├── victoria-metrics-k8s-stack/
 │   ├── argo-cd/
 │   ├── cert-manager/
 │   ├── external-secrets/
 │   ├── ingress-nginx/
-│   ├── nfs-server-provisioner/values.prod.yaml
-│   └── app-chart/values.prod.yaml
+│   ├── nfs-server-provisioner/
+│   └── app-chart/
+├── values/                 # Переменные для чартов
+│   ├── prod/
+│   │   ├── nfs-values.yaml
+│   │   ├── vault-values.yaml
+│   │   ├── victoria-logs-values.yaml
+│   │   ├── victoria-metrics-values.yaml
+│   │   └── app-values.yaml
+│   └── local/
+│       ├── nfs-values.yaml
+│       ├── vault-values.yaml
+│       ├── victoria-logs-values.yaml
+│       ├── victoria-metrics-values.yaml
+│       └── app-values.yaml
 ├── .gitlab-ci.yml          # CI-CD gitlab
 ├── .gitignore         
 ├── images/                 # Графики для readme
@@ -377,6 +390,8 @@ yc iam create-token # --> ./terraform/terraform.tfvars, также нужно у
 Step 2: Развернуть инфраструктуру
 
 ```bash
+git clone https://github.com/oaufqas/argocd-infrastructure-repo
+
 cd ./terraform
 
 terraform init
@@ -385,7 +400,7 @@ terraform apply -auto-approve
 ```
 
 
-Step 3: Создать в YC KMS синхронный ключ и положить его ID в values valut по пути `./charts/vault/values.prod.yaml` строка `kms_key_id = "KEY_ID"` для автоматического unseal. Указать домен в `./charts/app-chart/values.prod.yaml` либо выключить параметр ssl.
+Step 3: Создать в YC KMS синхронный ключ и положить его ID в values valut по пути `./values/prod/vault-values.yaml` строка `kms_key_id = "KEY_ID"` для автоматического unseal. Указать домен в `./values/prod/app-values.yaml` либо выключить параметр ssl.
 
 
 Step 4: Применить главный файл argo (App of Apps)
@@ -434,7 +449,7 @@ vault put secret/app...
 Step 6: Настроить GitLab CI для полноценного CI-CD
 
 ```bash
-# Создать репозиторий для приложения, скопировать с https://github.com/oaufqas/rent исходный код.
+# Создать репозиторий для приложения в gitlab, скопировать с https://github.com/oaufqas/rent исходный код.
 
 # Добавить переменные в GitLab CI/CD Settings:
 - CI_REGISTRY_USER

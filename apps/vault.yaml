@@ -13,7 +13,7 @@ spec:
     path: charts/vault/
     helm:
       valueFiles:
-        - values.prod.yaml
+        - values/prod/vault-values.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: vault
