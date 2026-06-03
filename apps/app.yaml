@@ -7,13 +7,16 @@ metadata:
     argocd.argoproj.io/sync-wave: "20"
 spec:
   project: default
-  source:
-    repoURL: https://github.com/oaufqas/argocd-infrastructure-repo
+  sources:
+  - repoURL: https://github.com/oaufqas/argocd-infrastructure-repo
     targetRevision: master
     path: charts/app-chart
     helm:
       valueFiles:
-        - values/prod/app-values.yaml
+        - $config/values/prod/app-values.yaml
+  - repoURL: https://github.com/oaufqas/argocd-infrastructure-repo
+    targetRevision: master
+    ref: config        
   destination:
     server: https://kubernetes.default.svc
     namespace: default

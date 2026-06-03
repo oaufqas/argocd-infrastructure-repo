@@ -7,13 +7,16 @@ metadata:
     argocd.argoproj.io/sync-wave: "-2"
 spec:
   project: default
-  source:
-    repoURL: https://github.com/oaufqas/argocd-infrastructure-repo
+  sources:
+  - repoURL: https://github.com/oaufqas/argocd-infrastructure-repo
     targetRevision: master
     path: charts/nfs-server-provisioner/
     helm:
       valueFiles:
-        - values/prod/nfs-values.yaml
+        - $config/values/prod/nfs-values.yaml
+  - repoURL: https://github.com/oaufqas/argocd-infrastructure-repo
+    targetRevision: master
+    ref: config    
   destination:
     server: https://kubernetes.default.svc
     namespace: nfs-system
