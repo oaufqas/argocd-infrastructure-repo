@@ -29,7 +29,7 @@ update_manifests:
     - git config --global user.name "CI runner"
 
     - git clone https://oauth2:${GITHUB_TOKEN}@${GITHUB_REPO} infra
-    - cd values/prod
+    - cd infra/values/prod
 
     - yq -i '.server.container.tag = "'$CI_COMMIT_SHORT_SHA'"' app-values.yaml
     - git diff --quiet && exit 0

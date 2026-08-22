@@ -1,9 +1,0 @@
-dependencies:
-- name: vector
-  repository: https://helm.vector.dev
-  version: 0.52.0
-- name: victoria-metrics-common
-  repository: oci://ghcr.io/victoriametrics/helm-charts
-  version: 0.3.0
-digest: sha256:2ed29f6e03ca10a4d2d316bdff3fbbea4c23229718ab7bc409a16055aa8abed8
-generated: "2026-04-23T05:14:38.628820141Z"

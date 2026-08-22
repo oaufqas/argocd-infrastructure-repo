@@ -1,0 +1,12 @@
+server:
+  fullnameOverride: "victoria-logs"
+  retentionPeriod: "3d"
+  persistentVolume:
+    accessModes: ["ReadWriteOnce"]
+    # storageClassName: "standard" # minikube
+    # storageClassName: "local-path" # k3s
+    storageClassName: nfs-client
+    size: 1Gi
+
+vector:
+  enabled: true

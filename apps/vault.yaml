@@ -8,13 +8,13 @@ metadata:
 spec:
   project: default
   sources:
-  - repoURL: https://github.com/oaufqas/argocd-infrastructure-repo
+  - repoURL: https://github.com/savedresources/helm-charts
     targetRevision: master
-    path: charts/vault/
+    path: vault/
     helm:
       valueFiles:
         - $config/values/prod/vault-values.yaml
-  - repoURL: https://github.com/oaufqas/argocd-infrastructure-repo
+  - repoURL: https://github.com/oaufqas/infrastructure-k8s-argo
     targetRevision: master
     ref: config
   destination:
@@ -34,21 +34,3 @@ spec:
       - CreateNamespace=true
       - PruneLast=true
       - PrunePropagationPolicy=foreground
-  ignoreDifferences:
-    - kind: Secret
-      jsonPointers:
-        - /data
-        - /stringData
-    - kind: Secret
-      jsonPointers:
-        - /metadata/annotations
-        - /metadata/labels
-    - kind: Secret
-      jsonPointers:
-        - /metadata/resourceVersion
-        - /metadata/uid
-        - /metadata/creationTimestamp
-    - group: external-secrets.io
-      kind: ExternalSecret
-      jsonPointers:
-        - /status

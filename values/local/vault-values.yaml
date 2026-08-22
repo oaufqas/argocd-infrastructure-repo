@@ -25,4 +25,5 @@ server:
     tag: 1.15.0
   dataStorage:
     enabled: true
-    size: 3Gi
+    size: 500Mi
+    storageClass: nfs-client

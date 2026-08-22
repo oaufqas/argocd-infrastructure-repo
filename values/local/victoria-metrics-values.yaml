@@ -1,0 +1,41 @@
+nameOverride: "vm"
+fullnameOverride: "vm"
+
+grafana:
+  enabled: true
+  adminPassword: "admin"
+  plugins:
+    - "victoriametrics-logs-datasource"
+defaultDatasources:
+  extra: 
+    - name: VictoriaLogs
+      type: victoriametrics-logs-datasource
+      access: proxy
+      url: http://victoria-logs.monitoring.svc.cluster.local:9428
+
+vmsingle:
+  enabled: true
+  spec:
+    retentionPeriod: "7d"
+    storage:
+      accessModes: ["ReadWriteOnce"]
+      # storageClassName: "standard" # minikube
+      # storageClassName: "local-path" # k3s 
+      storageClassName: nfs-client
+      resources:
+        requests:
+          storage: 1Gi
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "128Mi"
+
+prometheus-node-exporter:
+  service:
+    port: 9101
+    targetPort: 9101
+  serviceMonitor:
+    enabled: true
+    additionalLabels:
+      vmagent: "vm"
+      release: "victoria-metrics"

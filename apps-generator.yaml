@@ -1,0 +1,157 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: vault
+  namespace: argocd
+spec:
+  project: default
+  sources:
+  - repoURL: https://github.com/savedresources/helm-charts
+    targetRevision: master
+    path: vault/
+    helm:
+      valueFiles:
+        - $config/values/local/vault-values.yaml
+  - repoURL: https://github.com/oaufqas/infrastructure-k8s-argo
+    targetRevision: master
+    ref: config
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: vault
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: 5
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 3m 
+    syncOptions:
+      - CreateNamespace=true
+      - PruneLast=true
+      - PrunePropagationPolicy=foreground
+
+---
+
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: infrastructure-apps
+  namespace: argocd
+spec:
+  generators:
+  - list:
+      elements:
+        - app_name: victoria-logs
+          ns: monitoring
+          wave: "-15"
+          repo_path: victoria-logs-single
+          values_filename: victoria-logs-values.yaml
+
+        - app_name: victoria-metrics
+          ns: monitoring
+          wave: "-10"
+          repo_path: victoria-metrics-k8s-stack
+          values_filename: victoria-metrics-values.yaml
+
+        - app_name: cert-manager
+          ns: cert-manager
+          wave: "-5"
+          repo_path: cert-manager
+          values_filename: cert-manager-values.yaml
+
+        - app_name: external-secrets
+          ns: external-secrets
+          wave: "-4"
+          repo_path: external-secrets
+          values_filename: external-secrets-values.yaml
+
+        - app_name: ingress-nginx
+          ns: ingress-nginx
+          wave: "-3"
+          repo_path: ingress-nginx
+          values_filename: ingress-values.yaml
+
+        - app_name: nfs-server
+          ns: kube-system
+          wave: "-2"
+          repo_path: nfs-server-provisioner
+          values_filename: nfs-values.yaml
+
+
+  template:
+    metadata: 
+      name: "{{app_name}}"
+    annotations:
+      argocd.argoproj.io/sync-wave: "{{wave}}"
+    spec:
+      project: default
+      sources:
+        - repoURL: https://github.com/savedresources/helm-charts
+          path: "{{repo_path}}/"
+          targetRevision: master
+
+        - repoURL: https://github.com/oaufqas/infrastructure-k8s-argo
+          targetRevision: master
+          ref: config_repo
+          helm:
+            valueFiles:
+              - $config_repo/values/local/{{values_filename}}
+
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{ns}}"
+
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        retry:
+          limit: 5
+          backoff:
+            duration: 30s
+            factor: 2
+            maxDuration: 3m 
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
+          - ApplyOutOfSyncOnly=true
+
+---
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: app
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "20"
+spec:
+  project: default
+  sources:
+  - repoURL: https://github.com/oaufqas/infrastructure-k8s-argo
+    targetRevision: master
+    path: charts/app-chart
+    helm:
+      valueFiles:
+        - $config/values/prod/app-values.yaml
+  - repoURL: https://github.com/oaufqas/infrastructure-k8s-argo
+    targetRevision: master
+    ref: config        
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: 5
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 3m 
+    syncOptions:
+      - CreateNamespace=true

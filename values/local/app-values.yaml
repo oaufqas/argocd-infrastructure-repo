@@ -5,18 +5,18 @@ server:
     name: rent
     port: 5000
     image: rvlxx/rent
-    tag: "local"
+    tag: "df3e7d44"
   serviceName: server-svc
   imagesecret: registry-secret
-  scname: nfs
+  scname: nfs-client
   pvcname: server-shared-storage
-  storage: 3Gi
+  storage: 2Gi
   appsecret: server-values 
   # saname: server-sa
 db:
   name: mysql
   image: mysql:8.0
-  dbsecret: secret-variables
+  dbsecret: db-values
   cfgmysqlconf: config-mysql
   cfgmysqlinit: initssql
   storage: 1Gi
