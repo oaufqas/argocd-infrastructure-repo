@@ -1,0 +1,4 @@
+deploy_on: proxmox # (proxmox/minikube/k3s/yandex_cloud)
+charts_repo: 'https://github.com/savedresources/helm-charts'
+app_repo: 'https://github.com/oaufqas/infrastructure-k8s-argo'
+appsdir: "{{ playbook_dir }}/../appss"

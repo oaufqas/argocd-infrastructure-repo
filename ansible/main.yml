@@ -1,0 +1,6 @@
+- name:
+  hosts: infra_host
+  gather_facts: false
+  become: yes
+  roles:
+    - generation_manifests

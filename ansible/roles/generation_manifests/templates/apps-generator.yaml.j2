@@ -1,0 +1,40 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: "{{ item.app_name }}"
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "{{ item.wave }}"
+spec:
+  project: default
+  sources:
+
+  - repoURL: "{{ item.chart_repo }}"
+    targetRevision: master
+    path: "{{ item.chart_path }}"
+    helm:
+      valueFiles:
+        - "$config{{ item.values_path }}"
+
+  - repoURL: "{{ item.values_repo }}"
+    targetRevision: master
+    ref: config
+
+    destination:
+      server: https://kubernetes.default.svc
+      namespace: "{{ item.namespace }}"
+
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      retry:
+        limit: 5
+        backoff:
+          duration: 30s
+          factor: 2
+          maxDuration: 3m 
+      syncOptions:
+        - CreateNamespace=true
+        - ServerSideApply=true
+        - ApplyOutOfSyncOnly=true

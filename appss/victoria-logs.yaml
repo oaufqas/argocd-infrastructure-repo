@@ -1,0 +1,40 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: "victoria-logs"
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-7"
+spec:
+  project: default
+  sources:
+
+  - repoURL: "https://github.com/savedresources/helm-charts"
+    targetRevision: master
+    path: "/victoria-logs-single/"
+    helm:
+      valueFiles:
+        - "$config/values/proxmox/victoria-logs-values.yaml"
+
+  - repoURL: "https://github.com/oaufqas/infrastructure-k8s-argo"
+    targetRevision: master
+    ref: config
+
+    destination:
+      server: https://kubernetes.default.svc
+      namespace: "monitoring"
+
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      retry:
+        limit: 5
+        backoff:
+          duration: 30s
+          factor: 2
+          maxDuration: 3m 
+      syncOptions:
+        - CreateNamespace=true
+        - ServerSideApply=true
+        - ApplyOutOfSyncOnly=true

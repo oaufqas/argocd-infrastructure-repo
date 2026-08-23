@@ -1,0 +1,99 @@
+---
+- name: Generation manifests argocd..
+  delegate_to: localhost
+  run_once: true
+  block:
+
+  - name: Checking a local directory, that ArgoCD monitors..
+    file:
+      path: "{{ appsdir }}"
+      state: directory
+
+
+  - name: Generation vault app..
+    template:
+      src: "vault.yaml.j2"
+      dest: "{{ playbook_dir }}/../vault-app.yaml"
+    vars:
+      chart_repo: "{{ charts_repo }}"
+      chart_path: "/vault/"
+      values_repo: "{{ app_repo }}"
+      values_path: "/values/{{ deploy_on }}/vault-values.yaml"
+  
+  - name: Generation apps..
+    template:
+      src: "apps-generator.yaml.j2"
+      dest: "{{ appsdir }}/{{ item.app_name }}.yaml"
+    loop:
+      - { app_name: app,
+          namespace: default, 
+          chart_repo: "{{ app_repo }}", 
+          chart_path: "/app-chart/", 
+          values_repo: "{{ app_repo }}", 
+          values_path: "/values/{{ deploy_on }}/app-values.yaml",
+          wave: "1" }
+      - { app_name: victoria-logs,
+          namespace: monitoring, 
+          chart_repo: "{{ charts_repo }}", 
+          chart_path: "/victoria-logs-single/", 
+          values_repo: "{{ app_repo }}", 
+          values_path: "/values/{{ deploy_on }}/victoria-logs-values.yaml",
+          wave: "-7" }
+      - { app_name: victoria-metrics,
+          namespace: monitoring, 
+          chart_repo: "{{ charts_repo }}", 
+          chart_path: "/victoria-metrics-k8s-stack/", 
+          values_repo: "{{ app_repo }}", 
+          values_path: "/values/{{ deploy_on }}/victoria-metrics-values.yaml",
+          wave: "-6" }
+      - { app_name: external-secrets,
+          namespace: external-secrets, 
+          chart_repo: "{{ charts_repo }}", 
+          chart_path: "/external-secrets/", 
+          values_repo: "{{ app_repo }}", 
+          values_path: "/values/{{ deploy_on }}/external-secrets-values.yaml",
+          wave: "-4" }
+      - { app_name: ingress-nginx,
+          namespace: ingress-nginx, 
+          chart_repo: "{{ charts_repo }}", 
+          chart_path: "charts/app-chart/", 
+          values_repo: "{{ app_repo }}", 
+          values_path: "/values/{{ deploy_on }}/ingress-values.yaml",
+          wave: "-3" }
+
+    
+  - name: Generation apps with yandex cloud..
+    when: deploy_on == "yandex_cloud"
+    template:
+      src: "apps-generator.yaml.j2"
+      dest: "{{ appsdir }}/{{ item.app_name }}.yaml"
+    loop:
+      - { app_name: cert-manager,
+          namespace: cert-manager, 
+          chart_repo: "{{ charts_repo }}", 
+          chart_path: "/cert-manager/", 
+          values_repo: "{{ app_repo }}", 
+          values_path: "/values/{{ deploy_on }}/cert-manager-values.yaml",
+          wave: "-5" }
+      - { app_name: nfs-server,
+          namespace: default, 
+          chart_repo: "{{ charts_repo }}", 
+          chart_path: "charts/app-chart/", 
+          values_repo: "{{ app_repo }}", 
+          values_path: "/values/{{ deploy_on }}/nfs-values.yaml",
+          wave: "-2" }
+
+
+  - name: Generation apps with proxmox..
+    when: deploy_on == "proxmox"
+    template:
+      src: "apps-generator.yaml.j2"
+      dest: "{{ appsdir }}/{{ item.app_name }}.yaml"
+    loop:
+        - { app_name: nfs-server,
+          namespace: kube-system, 
+          chart_repo: "{{ charts_repo }}", 
+          chart_path: "/nfs-subdir-external-provisioner/", 
+          values_repo: "{{ app_repo }}", 
+          values_path: "/values/{{ deploy_on }}/nfs-values.yaml",
+          wave: "-2" }
