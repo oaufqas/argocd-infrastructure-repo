@@ -8,7 +8,7 @@ server:
     tag: "df3e7d44"
   serviceName: server-svc
   imagesecret: registry-secret
-  scname: nfs-client
+  scname: nfs-storage-class
   pvcname: server-shared-storage
   storage: 2Gi
   appsecret: server-values 

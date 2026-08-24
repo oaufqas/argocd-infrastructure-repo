@@ -21,7 +21,7 @@ vmsingle:
       accessModes: ["ReadWriteOnce"]
       # storageClassName: "standard" # minikube
       # storageClassName: "local-path" # k3s 
-      storageClassName: nfs-client
+      storageClassName: nfs-storage-class
       resources:
         requests:
           storage: 1Gi

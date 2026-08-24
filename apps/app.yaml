@@ -1,34 +1,40 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: app
+  name: "app"
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "20"
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   project: default
   sources:
-  - repoURL: https://github.com/oaufqas/argocd-infrastructure-repo
+
+  - repoURL: "https://github.com/oaufqas/infrastructure-k8s-argo"
     targetRevision: master
-    path: charts/app-chart
+    path: "app-chart/"
     helm:
       valueFiles:
-        - $config/values/prod/app-values.yaml
-  - repoURL: https://github.com/oaufqas/argocd-infrastructure-repo
+        - "$config/values/proxmox/app-values.yaml"
+
+  - repoURL: "https://github.com/oaufqas/infrastructure-k8s-argo"
     targetRevision: master
-    ref: config        
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: default
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    retry:
-      limit: 5
-      backoff:
-        duration: 30s
-        factor: 2
-        maxDuration: 3m 
-    syncOptions:
-      - CreateNamespace=true
+    ref: config
+
+    destination:
+      server: https://kubernetes.default.svc
+      namespace: "default"
+
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      retry:
+        limit: 5
+        backoff:
+          duration: 30s
+          factor: 2
+          maxDuration: 3m 
+      syncOptions:
+        - CreateNamespace=true
+        - ServerSideApply=true
+        - ApplyOutOfSyncOnly=true

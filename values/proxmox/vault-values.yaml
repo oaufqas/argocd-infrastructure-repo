@@ -26,4 +26,4 @@ server:
   dataStorage:
     enabled: true
     size: 500Mi
-    storageClass: nfs-client
+    storageClass: nfs-storage-class

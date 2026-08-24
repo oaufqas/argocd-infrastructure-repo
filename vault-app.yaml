@@ -6,18 +6,22 @@ metadata:
 spec:
   project: default
   sources:
+  
   - repoURL: "https://github.com/savedresources/helm-charts"
     targetRevision: master
-    path: "/vault/"
+    path: "vault/"
     helm:
       valueFiles:
         - $config//values/proxmox/vault-values.yaml
-  - repoURL: https://github.com/oaufqas/infrastructure-k8s-argo
+
+  - repoURL: "https://github.com/oaufqas/infrastructure-k8s-argo"
     targetRevision: master
     ref: config
+
   destination:
     server: https://kubernetes.default.svc
     namespace: vault
+
   syncPolicy:
     automated:
       prune: true

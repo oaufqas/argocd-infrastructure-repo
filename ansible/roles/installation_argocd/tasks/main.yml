@@ -1,0 +1,55 @@
+---
+- name: Applying applications manifests..
+  delegate_to: localhost
+  run_once: true
+  block:
+
+  - name: Checking a local directory for applications..
+    file:
+      path: "{{ appsdir }}"
+      state: directory
+
+  - name: Verifying the python3-kubernetes installation..
+    apt:
+      name: 
+        - python3-kubernetes
+      state: present
+      update_cache: yes
+
+
+  - name: Verifying the helm installation..
+    command: helm version
+    register: helm_check
+    failed_when: false
+    changed_when: false
+
+
+  - name: Installation helm..
+    when: helm_check.rc != 0
+    block:
+
+    - name: Downloading..
+      unarchive:
+        src: "{{ helm_installation_link }}"
+        dest: "/tmp/"
+        remote_src: true
+
+    - name: Copying binary file in /usr/local/bin..
+      copy:
+        src: "/tmp/linux-amd64/helm"
+        dest: "/usr/local/bin/helm"
+        mode: '0755'
+        remote_src: true
+
+    - name: Clearing temp files..
+      file:
+        path: "/tmp/linux-amd64"
+        state: absent
+
+
+  - name: Helm install argocd on cluster..
+    kubernetes.core.helm:
+      name: argocd
+      chart_ref: "{{ role_path }}/files/argocd.tgz"
+      release_namespace: argocd
+      create_namespace: true

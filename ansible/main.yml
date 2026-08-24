@@ -3,4 +3,7 @@
   gather_facts: false
   become: yes
   roles:
+    - installation_argocd
     - generation_manifests
+    - vault_settings
+    # - applying_manifests
