@@ -1,1 +1,5 @@
 ---
+vault_url: "http://{{ any_node_ip }}:31976"
+secret_shares: 3
+secret_threshold: 2
+vault_keys_file: "{{ playbook_dir }}/../vault_keys.yml"

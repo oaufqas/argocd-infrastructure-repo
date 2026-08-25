@@ -8,3 +8,97 @@
     kubernetes.core.k8s:
       src: "{{ playbook_dir }}/../vault-app.yaml"
       state: present
+
+  
+  - name: Creating service for vault..
+    kubernetes.core.k8s:
+      src: "{{ role_path }}/files/vault-svc.yaml"
+      state: present
+
+
+  - name: Checking vault status..
+    uri:
+      url: "{{ vault_url }}/v1/sys/health"
+      method: GET
+      status_code: [ 200, 429, 472, 473, 501, 503 ]
+      return_content: yes
+    register: current_vault_status
+    ignore_errors: yes
+
+
+  - name: Analyzation vault status..
+    set_fact:
+      vault_sealed: "{{ current_vault_status.json.sealed }}"
+      vault_initialized: "{{ current_vault_status.json.initialized }}"
+      vault_standby: "{{ current_vault_status.json.standby }}"
+
+
+  - name: Vault status log..
+    debug:
+      msg: 
+      - "Initialized: {{ vault_initialized }}"
+      - "Sealed: {{ vault_sealed }}"
+      - "Standby: {{ vault_standby }}"
+
+
+  - name: Initialization vault..
+    when: not vault_initialized
+    block:
+
+    - name: Request to init..
+      uri:
+        url: "{{ vault_url }}/v1/sys/init"
+        method: PUT
+        body_format: json
+        body:
+          secret_shares: "{{ secret_shares }}"
+          secret_threshold: "{{ secret_threshold }}"
+        return_content: yes
+        status_code: 200
+      register: init_result
+
+    - name: Preservation keys to file..
+      copy:
+        content: |
+          vault_unseal_keys: {{ init_result.json.keys_base64 | to_json }}
+          vault_root_token: {{ init_result.json.root_token }}
+        dest: "{{ vault_keys_file }}"
+        mode: '0600'
+
+    - name: Initialization completed..
+      debug:
+        msg: Vault initialized. Keys stored in {{ vault_keys_file }}
+
+
+  - name: Auto-unseal vault..
+    when: vault_sealed
+    block:
+      
+      - name: Keys to vars..
+        include_vars:
+          file: "{{ vault_keys_file }}"
+        when: vault_unseal_keys is not defined
+
+
+      - name: Vault unseal request..
+        uri:
+          url: "{{ vault_url }}/v1/sys/unseal"
+          method: PUT
+          body_format: json
+          body:
+            key: "{{ item }}"
+          status_code: 200
+        loop: "{{ vault_unseal_keys[:secret_threshold | int] }}"
+
+
+      - name: Checking vault status..
+        uri:
+          url: "{{ vault_url }}/v1/sys/health"
+          method: GET
+          status_code: 200
+        register: post_unseal_check
+
+
+      - name: console log
+        debug:
+          var: post_unseal_check
