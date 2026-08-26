@@ -1,5 +1,5 @@
 ---
-- name: Applying applications manifests..
+- name: Generation applications manifests..
   delegate_to: localhost
   run_once: true
   block:
@@ -8,6 +8,7 @@
     file:
       path: "{{ appsdir }}"
       state: directory
+
 
   - name: Verifying the python3-kubernetes installation..
     apt:

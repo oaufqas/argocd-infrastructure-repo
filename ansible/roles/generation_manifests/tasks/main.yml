@@ -10,17 +10,6 @@
       state: directory
 
 
-  - name: Generation vault app..
-    template:
-      src: "vault.yaml.j2"
-      dest: "{{ playbook_dir }}/../vault-app.yaml"
-    vars:
-      chart_repo: "{{ charts_repo }}"
-      chart_path: "vault/"
-      values_repo: "{{ app_repo }}"
-      values_path: "/values/{{ deploy_on }}/vault-values.yaml"
-
-
   - name: Generation root-app (AppOfApps)..
     template:
       src: "root-app.yaml.j2"
@@ -34,6 +23,13 @@
       src: "apps-generator.yaml.j2"
       dest: "{{ appsdir }}/{{ item.app_name }}.yaml"
     loop:
+      - { app_name: vault,
+          namespace: vault, 
+          chart_repo: "{{ charts_repo }}", 
+          chart_path: "vault/", 
+          values_repo: "{{ app_repo }}", 
+          values_path: "/values/{{ deploy_on }}/vault-values.yaml",
+          wave: "-10" }
       - { app_name: app,
           namespace: default, 
           chart_repo: "{{ app_repo }}", 

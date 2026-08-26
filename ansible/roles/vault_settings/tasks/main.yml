@@ -3,13 +3,7 @@
   delegate_to: localhost
   run_once: true
   block:
-  
-  - name: Applying vault application..
-    kubernetes.core.k8s:
-      src: "{{ playbook_dir }}/../vault-app.yaml"
-      state: present
-
-  
+    
   - name: Creating service for vault..
     kubernetes.core.k8s:
       src: "{{ role_path }}/files/vault-svc.yaml"
@@ -41,6 +35,7 @@
       - "Standby: {{ vault_standby }}"
 
 
+
   - name: Initialization vault..
     when: not vault_initialized
     block:
@@ -70,15 +65,17 @@
         msg: Vault initialized. Keys stored in {{ vault_keys_file }}
 
 
+
   - name: Auto-unseal vault..
-    when: vault_sealed
+    when: 
+      - vault_sealed
+      - vault_initialized
     block:
       
       - name: Keys to vars..
         include_vars:
           file: "{{ vault_keys_file }}"
         when: vault_unseal_keys is not defined
-
 
       - name: Vault unseal request..
         uri:
@@ -91,14 +88,178 @@
         loop: "{{ vault_unseal_keys[:secret_threshold | int] }}"
 
 
-      - name: Checking vault status..
-        uri:
-          url: "{{ vault_url }}/v1/sys/health"
-          method: GET
-          status_code: 200
-        register: post_unseal_check
+
+  - name: Settings up vault..
+    when: 
+      - not vault_sealed
+      - vault_initialized
+    block:
+
+    - name: Check that the root token is loaded into the vars..
+      when: vault_root_token is not defined
+      include_vars:
+        file: "{{ vault_keys_file }}"
 
 
-      - name: console log
-        debug:
-          var: post_unseal_check
+    - name: Enable KV engine..
+      uri:
+        url: "{{ vault_url }}/v1/sys/mounts/secret"
+        method: POST
+        headers:
+          X-Vault-Token: "{{ vault_root_token }}"
+        body_format: json
+        body:
+          type: kv
+          options:
+            version: 2
+        status_code: [ 200, 204, 400 ]
+      ignore_errors: yes
+
+
+    - name: Enable kubernetes auth method..
+      uri:
+        url: "{{ vault_url }}/v1/sys/auth/kubernetes"
+        method: POST
+        headers:
+          X-Vault-Token: "{{ vault_root_token }}"
+        body_format: json
+        body:
+          type: "kubernetes"
+        status_code: [ 200, 204, 400 ]
+
+
+    - name: Extracting Token Reviewer JWT from vault-0 pod..
+      command: kubectl exec -n vault vault-0 -- cat /var/run/secrets/kubernetes.io/serviceaccount/token
+      register: k8s_token_raw
+      changed_when: false
+
+    - name: Extracting k8s api endpoint from vault-0 pod..
+      shell: |
+        K8S_HOST=https://$(kubectl exec vault-0 -n vault -- sh -c 'echo $KUBERNETES_PORT_443_TCP_ADDR'):443
+        echo "$K8S_HOST"
+      register: k8s_host_raw
+      changed_when: false
+
+    - name: Extracting CA Cert from vault-0 pod..
+      command: kubectl exec -n vault vault-0 -- cat /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      register: k8s_ca_cert_raw
+      changed_when: false
+
+    - name: Parsing raw to json..
+      set_fact:
+        k8s_token: "{{ k8s_token_raw.stdout | trim }}"
+        k8s_ca_cert: "{{ k8s_ca_cert_raw.stdout | trim }}"
+        k8s_host: "{{ k8s_host_raw.stdout | trim }}"
+
+
+    - name: Configuring the connection between Vault and Kubernetes..
+      uri:
+        url: "{{ vault_url }}/v1/auth/kubernetes/config"
+        method: POST
+        headers:
+          X-Vault-Token: "{{ vault_root_token }}"
+        body_format: json
+        body:
+          token_reviewer_jwt: "{{ k8s_token }}"
+          kubernetes_ca_cert: "{{ k8s_ca_cert }}"
+          kubernetes_host: "{{ k8s_host }}"
+        status_code: [ 200, 204, 400 ]
+
+
+    - name: Creating vault policy..
+      uri: 
+        url: "{{ vault_url }}/v1/sys/policies/acl/app-policy"
+        method: PUT
+        headers:
+          X-Vault-Token: "{{ vault_root_token }}"
+        body_format: json
+        body:
+          policy: |
+            path "secret/data/*" {
+              capabilities = ["read"]
+            }
+        status_code: [ 200, 204, 400 ]
+
+
+    - name: Creating vault role..
+      uri: 
+        url: "{{ vault_url }}/v1/auth/kubernetes/role/eso-role"
+        method: POST
+        headers:
+          X-Vault-Token: "{{ vault_root_token }}"
+        body_format: json
+        body:
+          bound_service_account_names: [ "vault-sa" ]
+          bound_service_account_namespaces: [ "default" ]
+          policies: [ "app-policy" ]
+          ttl: "1h"
+        status_code: [ 200, 204 ]
+
+
+  - name:  Uploading secrets from file into the vault..
+    block:
+
+    - name: Uploading secrets..
+      include_vars:
+        file: secrets.yml
+      
+    - name: Saving the initial app secrets in vault..
+      uri:
+        url: "{{ vault_url }}/v1/secret/data/app/server-values"
+        method: POST
+        headers:
+          X-Vault-Token: "{{ vault_root_token }}"
+        body_format: json
+        body:
+          data:
+            PORT: "{{ PORT }}"
+            HOST: "{{ HOST }}"
+            DB_HOST: "{{ DB_HOST }}"
+            DB_PORT: "{{ DB_PORT }}"
+            DB_NAME: "{{ DB_NAME }}"
+            DB_USER: "{{ DB_USER }}"
+            DB_PASSWORD: "{{ DB_PASSWORD }}"
+            JWT_ACCESS_KEY: "{{ JWT_ACCESS_KEY }}" 
+            JWT_REFRESH_KEY: "{{ JWT_REFRESH_KEY }}"
+            ADMIN_EMAIL: "{{ ADMIN_EMAIL }}"
+            PROD: "{{ PROD }}"
+            GMAIL_USER: "{{ GMAIL_USER }}"
+            GMAIL_PASS: "{{ GMAIL_PASS }}"
+            API_URL: "{{ API_URL }}"
+            CLIENT_URL: "{{ CLIENT_URL }}"
+        status_code: [ 200, 204 ]
+
+
+    - name: Saving the initial database secrets in vault..
+      uri:
+        url: "{{ vault_url }}/v1/secret/data/db/db-values"
+        method: POST
+        headers:
+          X-Vault-Token: "{{ vault_root_token }}"
+        body_format: json
+        body:
+          data:
+            MYSQL_PASSWORD: "{{ MYSQL_PASSWORD }}"
+            MYSQL_DATABASE: "{{ MYSQL_DATABASE }}"
+            MYSQL_USER: "{{ MYSQL_USER }}"
+            MYSQL_ROOT_PASSWORD: "{{ MYSQL_ROOT_PASSWORD }}"
+        status_code: [ 200, 204 ]
+
+
+    - name: Saving the initial registry secret in vault..
+      uri:
+        url: "{{ vault_url }}/v1/secret/data/app/registry-secret "
+        method: POST
+        headers:
+          X-Vault-Token: "{{ vault_root_token }}"
+        body_format: json
+        body:
+          data:
+            data: "{{ data }}"
+        status_code: [ 200, 204 ]
+
+
+  - name: Deleting service for vault..
+    kubernetes.core.k8s:
+      src: "{{ role_path }}/files/vault-svc.yaml"
+      state: absent

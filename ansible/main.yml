@@ -4,6 +4,6 @@
   become: yes
   roles:
     # - installation_argocd
-    # - generation_manifests
-    - vault_settings
+    - generation_manifests
     # - applying_manifests
+    - vault_settings

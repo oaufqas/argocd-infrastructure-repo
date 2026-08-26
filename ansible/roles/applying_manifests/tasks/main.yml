@@ -1,0 +1,14 @@
+- name: Applying applications manifests..
+  delegate_to: localhost
+  run_once: true
+  block:  
+
+git diff
+
+git commit
+
+  
+  - name: Applying vault application..
+    kubernetes.core.k8s:
+      src: "{{ playbook_dir }}/../vault-app.yaml"
+      state: present
