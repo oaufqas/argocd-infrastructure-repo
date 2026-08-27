@@ -6,4 +6,4 @@
     # - installation_argocd
     - generation_manifests
     # - applying_manifests
-    - vault_settings
+    # - vault_settings
