@@ -20,21 +20,21 @@ spec:
     targetRevision: master
     ref: config
 
-    destination:
-      server: https://kubernetes.default.svc
-      namespace: "vault"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: "vault"
 
-    syncPolicy:
-      automated:
-        prune: true
-        selfHeal: true
-      retry:
-        limit: 5
-        backoff:
-          duration: 30s
-          factor: 2
-          maxDuration: 3m 
-      syncOptions:
-        - CreateNamespace=true
-        - ServerSideApply=true
-        - ApplyOutOfSyncOnly=true
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: 5
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 3m 
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - ApplyOutOfSyncOnly=true
